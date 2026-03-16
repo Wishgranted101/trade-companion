@@ -119,3 +119,22 @@ export async function fetchTradeStats() {
     avgRR: Math.round(avgRR * 100) / 100,
   }
 }
+
+// ── Upload screenshot to Supabase Storage ─────────────────────────
+export async function uploadScreenshot(file: File): Promise<string> {
+  const supabase = createClient()
+  const ext = file.name.split('.').pop()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('screenshots')
+    .upload(filename, file, { contentType: file.type })
+
+  if (error) throw new Error(error.message)
+
+  const { data } = supabase.storage
+    .from('screenshots')
+    .getPublicUrl(filename)
+
+  return data.publicUrl
+}

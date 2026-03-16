@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { fetchTradeById, deleteTrade } from '@/lib/supabase/queries'
-import { Trade } from '@/types/trade'
+import { fetchTradeById, deleteTrade, updateTrade } from '@/lib/supabase/queries'
+import { Trade, Outcome, Emotion } from '@/types/trade'
 import Header from '@/components/layout/Header'
 import BottomNav from '@/components/layout/BottomNav'
 
@@ -10,6 +10,14 @@ export default function TradeDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const [trade, setTrade] = useState<Trade | null>(null)
+  const [closing, setClosing] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [closeForm, setCloseForm] = useState({
+    outcome: 'win' as Outcome,
+    rr_result: '',
+    emotion: 'calm' as Emotion,
+  })
 
   useEffect(() => {
     if (id) fetchTradeById(id as string).then(setTrade).catch(console.error)
@@ -21,12 +29,52 @@ export default function TradeDetailPage() {
     router.push('/')
   }
 
+  const handleCloseTrade = async () => {
+    if (!trade) return
+    setSaving(true)
+    try {
+      const updated = await updateTrade(trade.id, {
+        status: 'closed',
+        outcome: closeForm.outcome,
+        rr_result: parseFloat(closeForm.rr_result) || null,
+        emotion: closeForm.emotion,
+      })
+      setTrade(updated)
+      setClosing(false)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEditSave = async () => {
+    if (!trade) return
+    setSaving(true)
+    try {
+      const updated = await updateTrade(trade.id, {
+        outcome: trade.outcome,
+        rr_result: trade.rr_result,
+        emotion: trade.emotion,
+        followed_plan: trade.followed_plan,
+        status: trade.status,
+      })
+      setTrade(updated)
+      setEditing(false)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (!trade) return (
     <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
       <span style={{ color: 'var(--text-secondary)' }}>Loading...</span>
     </div>
   )
 
+  const isOpen = trade.status === 'open'
   const outcomeColor = trade.outcome === 'win' ? 'var(--accent)' : trade.outcome === 'loss' ? 'var(--accent-loss)' : 'var(--accent-be)'
 
   return (
@@ -34,11 +82,15 @@ export default function TradeDetailPage() {
       <Header title={trade.pair} />
       <div className="px-5 pt-5 flex flex-col gap-4">
 
-        {/* Outcome banner */}
+        {/* Status banner */}
         <div className="rounded-2xl p-4 flex items-center justify-between"
-          style={{ backgroundColor: 'var(--surface)', border: `1px solid ${outcomeColor}` }}>
-          <span className="text-2xl font-bold" style={{ color: outcomeColor }}>
-            {trade.outcome.toUpperCase()}
+          style={{
+            backgroundColor: 'var(--surface)',
+            border: `1px solid ${isOpen ? 'var(--accent-be)' : outcomeColor}`
+          }}>
+          <span className="text-2xl font-bold"
+            style={{ color: isOpen ? 'var(--accent-be)' : outcomeColor }}>
+            {isOpen ? 'OPEN' : trade.outcome?.toUpperCase()}
           </span>
           {trade.rr_result !== null && (
             <span className="text-xl font-bold font-mono" style={{ color: outcomeColor }}>
@@ -57,19 +109,166 @@ export default function TradeDetailPage() {
           <Detail label="Target" value={trade.target_price} mono />
           <Detail label="RR Planned" value={`${trade.rr_planned}R`} mono />
           <Detail label="Followed Plan" value={trade.followed_plan ? 'Yes ✓' : 'No ✗'} />
-          <Detail label="Emotion" value={trade.emotion} />
+          <Detail label="Emotion" value={trade.emotion ?? '—'} />
         </div>
 
+        {/* Screenshot */}
         {trade.screenshot_url && (
-          <a href={trade.screenshot_url} target="_blank" rel="noopener noreferrer"
-            className="w-full py-3 rounded-2xl text-sm font-bold text-center transition-all active:scale-95"
-            style={{ backgroundColor: 'var(--surface-2)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-            View Screenshot ↗
-          </a>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold tracking-widest uppercase"
+              style={{ color: 'var(--text-secondary)' }}>Chart Screenshot</label>
+            <img src={trade.screenshot_url} alt="Trade chart"
+              className="w-full rounded-xl"
+              style={{ border: '1px solid var(--border)' }} />
+          </div>
+        )}
+
+        {/* Close Trade */}
+        {isOpen && !closing && (
+          <button onClick={() => setClosing(true)}
+            className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
+            style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+            Close Trade
+          </button>
+        )}
+
+        {isOpen && closing && (
+          <div className="rounded-2xl p-4 flex flex-col gap-4"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)' }}>
+            <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Close Trade</div>
+
+            <Field label="Outcome">
+              <div className="grid grid-cols-3 gap-2">
+                {(['win', 'loss', 'breakeven'] as Outcome[]).map(o => (
+                  <button key={o} onClick={() => setCloseForm(p => ({ ...p, outcome: o }))}
+                    className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                    style={{
+                      backgroundColor: closeForm.outcome === o
+                        ? o === 'win' ? 'var(--accent)' : o === 'loss' ? 'var(--accent-loss)' : 'var(--accent-be)'
+                        : 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: closeForm.outcome === o ? '#fff' : 'var(--text-secondary)'
+                    }}>{o === 'breakeven' ? 'B/E' : o}</button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="RR Result">
+              <input type="number"
+                className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+                style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                placeholder="e.g. 2.5"
+                value={closeForm.rr_result}
+                onChange={e => setCloseForm(p => ({ ...p, rr_result: e.target.value }))} />
+            </Field>
+
+            <Field label="Emotion">
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { v: 'calm', e: '😌' }, { v: 'confident', e: '💪' },
+                  { v: 'anxious', e: '😰' }, { v: 'frustrated', e: '😤' },
+                  { v: 'fomo', e: '🤑' }, { v: 'revenge', e: '😡' },
+                ] as { v: Emotion; e: string }[]).map(({ v, e }) => (
+                  <button key={v} onClick={() => setCloseForm(p => ({ ...p, emotion: v }))}
+                    className="py-2 rounded-xl text-xs font-semibold capitalize transition-all active:scale-95"
+                    style={{
+                      backgroundColor: closeForm.emotion === v ? 'var(--accent)' : 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: closeForm.emotion === v ? '#fff' : 'var(--text-secondary)'
+                    }}>{e} {v}</button>
+                ))}
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setClosing(false)}
+                className="py-3 rounded-xl text-sm font-bold"
+                style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                Cancel
+              </button>
+              <button onClick={handleCloseTrade} disabled={saving}
+                className="py-3 rounded-xl text-sm font-bold"
+                style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                {saving ? 'Saving...' : 'Confirm Close'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit button for closed trades */}
+        {!isOpen && !editing && (
+          <button onClick={() => setEditing(true)}
+            className="w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-95"
+            style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            Edit Trade
+          </button>
+        )}
+
+        {!isOpen && editing && (
+          <div className="rounded-2xl p-4 flex flex-col gap-4"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Edit Trade</div>
+
+            <Field label="Outcome">
+              <div className="grid grid-cols-3 gap-2">
+                {(['win', 'loss', 'breakeven'] as Outcome[]).map(o => (
+                  <button key={o} onClick={() => setTrade(p => p ? { ...p, outcome: o } : p)}
+                    className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                    style={{
+                      backgroundColor: trade.outcome === o
+                        ? o === 'win' ? 'var(--accent)' : o === 'loss' ? 'var(--accent-loss)' : 'var(--accent-be)'
+                        : 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: trade.outcome === o ? '#fff' : 'var(--text-secondary)'
+                    }}>{o === 'breakeven' ? 'B/E' : o}</button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="RR Result">
+              <input type="number"
+                className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+                style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                placeholder="e.g. 2.5"
+                value={trade.rr_result ?? ''}
+                onChange={e => setTrade(p => p ? { ...p, rr_result: parseFloat(e.target.value) || null } : p)} />
+            </Field>
+
+            <Field label="Emotion">
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { v: 'calm', e: '😌' }, { v: 'confident', e: '💪' },
+                  { v: 'anxious', e: '😰' }, { v: 'frustrated', e: '😤' },
+                  { v: 'fomo', e: '🤑' }, { v: 'revenge', e: '😡' },
+                ] as { v: Emotion; e: string }[]).map(({ v, e }) => (
+                  <button key={v} onClick={() => setTrade(p => p ? { ...p, emotion: v } : p)}
+                    className="py-2 rounded-xl text-xs font-semibold capitalize transition-all active:scale-95"
+                    style={{
+                      backgroundColor: trade.emotion === v ? 'var(--accent)' : 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: trade.emotion === v ? '#fff' : 'var(--text-secondary)'
+                    }}>{e} {v}</button>
+                ))}
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setEditing(false)}
+                className="py-3 rounded-xl text-sm font-bold"
+                style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                Cancel
+              </button>
+              <button onClick={handleEditSave} disabled={saving}
+                className="py-3 rounded-xl text-sm font-bold"
+                style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         )}
 
         <button onClick={handleDelete}
-          className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95 mt-2"
+          className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
           style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
           Delete Trade
         </button>
@@ -87,6 +286,16 @@ function Detail({ label, value, mono }: { label: string; value: any; mono?: bool
         style={{ color: 'var(--text-secondary)' }}>{label}</div>
       <div className={`text-sm font-semibold ${mono ? 'font-mono' : ''}`}
         style={{ color: 'var(--text-primary)' }}>{value}</div>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-bold tracking-widest uppercase"
+        style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      {children}
     </div>
   )
 }

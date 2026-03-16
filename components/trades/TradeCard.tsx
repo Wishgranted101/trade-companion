@@ -8,7 +8,8 @@ const outcomeStyles = {
 }
 
 export default function TradeCard({ trade }: { trade: Trade }) {
-  const outcome = outcomeStyles[trade.outcome]
+  const isOpen = trade.status === 'open'
+  const outcome = trade.outcome ? outcomeStyles[trade.outcome] : null
   const date = new Date(trade.created_at).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric'
   })
@@ -18,7 +19,7 @@ export default function TradeCard({ trade }: { trade: Trade }) {
       <div className="rounded-2xl p-4 mb-3 transition-all active:scale-98"
         style={{
           backgroundColor: 'var(--surface)',
-          border: '1px solid var(--border)',
+          border: `1px solid ${isOpen ? 'var(--accent-be)' : 'var(--border)'}`,
           boxShadow: 'var(--card-shadow)'
         }}>
         <div className="flex items-center justify-between mb-3">
@@ -37,10 +38,18 @@ export default function TradeCard({ trade }: { trade: Trade }) {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
-            style={{ color: outcome.color, backgroundColor: `${outcome.color}15` }}>
-            {outcome.label}
-          </span>
+          {isOpen ? (
+            <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
+              style={{ color: 'var(--accent-be)', backgroundColor: 'var(--accent-be)15' }}>
+              OPEN
+            </span>
+          ) : outcome ? (
+            <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
+              style={{ color: outcome.color, backgroundColor: `${outcome.color}15` }}>
+              {outcome.label}
+            </span>
+          ) : null}
+
           {trade.rr_result !== null && (
             <div className="flex items-center gap-1">
               <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>RR</span>
