@@ -17,6 +17,7 @@ export default function TradeDetailPage() {
     outcome: 'win' as Outcome,
     rr_result: '',
     emotion: 'calm' as Emotion,
+    closing_note: '',
   })
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function TradeDetailPage() {
         outcome: closeForm.outcome,
         rr_result: parseFloat(closeForm.rr_result) || null,
         emotion: closeForm.emotion,
+        closing_note: closeForm.closing_note || null,
       })
       setTrade(updated)
       setClosing(false)
@@ -58,6 +60,7 @@ export default function TradeDetailPage() {
         emotion: trade.emotion,
         followed_plan: trade.followed_plan,
         status: trade.status,
+        closing_note: trade.closing_note,
       })
       setTrade(updated)
       setEditing(false)
@@ -111,6 +114,16 @@ export default function TradeDetailPage() {
           <Detail label="Followed Plan" value={trade.followed_plan ? 'Yes ✓' : 'No ✗'} />
           <Detail label="Emotion" value={trade.emotion ?? '—'} />
         </div>
+
+        {/* Closing note */}
+        {trade.closing_note && (
+          <div className="rounded-2xl p-4"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="text-xs font-bold tracking-widest uppercase mb-2"
+              style={{ color: 'var(--text-secondary)' }}>Closing Note</div>
+            <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{trade.closing_note}</div>
+          </div>
+        )}
 
         {/* Screenshot */}
         {trade.screenshot_url && (
@@ -178,6 +191,16 @@ export default function TradeDetailPage() {
                     }}>{e} {v}</button>
                 ))}
               </div>
+            </Field>
+
+            <Field label="Closing Note (optional)">
+              <textarea
+                className="w-full rounded-xl px-3 py-3 text-sm resize-none"
+                style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: '80px' }}
+                placeholder="What happened? Did price react as expected?"
+                value={closeForm.closing_note}
+                onChange={e => setCloseForm(p => ({ ...p, closing_note: e.target.value }))}
+              />
             </Field>
 
             <div className="grid grid-cols-2 gap-2">

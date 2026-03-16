@@ -123,12 +123,12 @@ export async function fetchTradeStats() {
 // ── Upload screenshot to Supabase Storage ─────────────────────────
 export async function uploadScreenshot(file: File): Promise<string> {
   const supabase = createClient()
-  const ext = file.name.split('.').pop()
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const compressed = await compressImage(file, 1200, 0.75)
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
 
   const { error } = await supabase.storage
     .from('screenshots')
-    .upload(filename, file, { contentType: file.type })
+    .upload(filename, compressed, { contentType: 'image/jpeg' })
 
   if (error) throw new Error(error.message)
 
@@ -137,4 +137,23 @@ export async function uploadScreenshot(file: File): Promise<string> {
     .getPublicUrl(filename)
 
   return data.publicUrl
+}
+
+// ── Compress image using Canvas API ───────────────────────────────
+function compressImage(file: File, maxWidth: number, quality: number): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(blob => resolve(blob!), 'image/jpeg', quality)
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
+  })
 }

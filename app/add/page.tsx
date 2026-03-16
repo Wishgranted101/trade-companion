@@ -32,6 +32,7 @@ export default function AddTradePage() {
     emotion: null,
     screenshot_url: null,
     status: 'open',
+    closing_note: null,
   })
 
   const set = (field: keyof NewTrade, value: any) =>

@@ -18,6 +18,7 @@ export interface Trade {
   emotion: Emotion | null
   screenshot_url: string | null
   status: TradeStatus
+  closing_note: string | null
   created_at: string
 }
 
