@@ -209,7 +209,6 @@ export default function AddTradePage() {
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleImage}
             />
