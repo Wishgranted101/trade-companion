@@ -24,12 +24,10 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false) }
       else { router.push('/') }
-
     } else if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) { setError(error.message); setLoading(false) }
       else { setMessage('Account created! You can now sign in.'); setMode('login'); setPassword(''); setLoading(false) }
-
     } else if (mode === 'forgot') {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -66,20 +64,13 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Password"
+              autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
               className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
             />
-          )}
-          {mode === 'login' && (
-            <div className="text-right -mt-2">
-              <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage('') }}
-                className="text-xs underline" style={{ color: 'var(--text-muted)' }}>
-                Forgot password?
-              </button>
-            </div>
           )}
           {error && <p className="text-sm" style={{ color: 'var(--accent-loss)' }}>{error}</p>}
           {message && <p className="text-sm" style={{ color: 'var(--accent)' }}>{message}</p>}
@@ -90,24 +81,38 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-xs text-center mt-6" style={{ color: 'var(--text-muted)' }}>
-          {mode === 'forgot' ? (
-            <button onClick={() => { setMode('login'); setError(''); setMessage('') }}
-              className="underline" style={{ color: 'var(--accent)' }}>
-              Back to sign in
-            </button>
-          ) : mode === 'login' ? (
-            <>Don't have an account?{' '}
-              <button onClick={() => { setMode('signup'); setError(''); setMessage('') }}
-                className="underline" style={{ color: 'var(--accent)' }}>Sign up</button>
-            </>
-          ) : (
-            <>Already have an account?{' '}
-              <button onClick={() => { setMode('login'); setError(''); setMessage('') }}
-                className="underline" style={{ color: 'var(--accent)' }}>Sign in</button>
+        <div className="flex flex-col items-center gap-2 mt-6">
+          {mode === 'login' && (
+            <>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Don't have an account?{' '}
+                <button type="button" onClick={() => { setMode('signup'); setError(''); setMessage('') }}
+                  className="underline" style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Sign up
+                </button>
+              </p>
+              <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage('') }}
+                className="text-xs underline" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Forgot password?
+              </button>
             </>
           )}
-        </p>
+          {mode === 'signup' && (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Already have an account?{' '}
+              <button type="button" onClick={() => { setMode('login'); setError(''); setMessage('') }}
+                className="underline" style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Sign in
+              </button>
+            </p>
+          )}
+          {mode === 'forgot' && (
+            <button type="button" onClick={() => { setMode('login'); setError(''); setMessage('') }}
+              className="text-xs underline" style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Back to sign in
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
