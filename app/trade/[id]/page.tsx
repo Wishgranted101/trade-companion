@@ -14,6 +14,7 @@ export default function TradeDetailPage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lightbox, setLightbox] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [closeForm, setCloseForm] = useState({
     outcome: 'win' as Outcome,
     rr_result: '',
@@ -83,7 +84,7 @@ export default function TradeDetailPage() {
 
   return (
     <>
-      <div className="pb-24" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="pb-40" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
         <Header title={trade.pair} />
         <div className="px-5 pt-5 flex flex-col gap-4">
 
@@ -299,11 +300,38 @@ export default function TradeDetailPage() {
             </div>
           )}
 
-          <button onClick={handleDelete}
-            className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
-            style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
-            Delete Trade
+
+{!editing && !closing && (
+  <>
+    {confirmDelete ? (
+      <div className="rounded-2xl p-4 flex flex-col gap-3"
+        style={{ backgroundColor: '#ff4d4d15', border: '1px solid var(--accent-loss)' }}>
+        <p className="text-sm font-semibold text-center"
+          style={{ color: 'var(--accent-loss)' }}>
+          Are you sure? This cannot be undone.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => setConfirmDelete(false)}
+            className="py-3 rounded-xl text-sm font-bold"
+            style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            Cancel
           </button>
+          <button onClick={handleDelete}
+            className="py-3 rounded-xl text-sm font-bold"
+            style={{ backgroundColor: 'var(--accent-loss)', color: '#fff' }}>
+            Yes, Delete
+          </button>
+        </div>
+      </div>
+    ) : (
+      <button onClick={() => setConfirmDelete(true)}
+        className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
+        style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
+        Delete Trade
+      </button>
+    )}
+  </>
+)}
 
         </div>
         <BottomNav />

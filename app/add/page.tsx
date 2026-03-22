@@ -344,9 +344,10 @@ export default function AddTradePage() {
 
           </div>
         </div>
-      )}
-    </div>
-  )
+   )}
+   <BottomNav />
+</div>
+)
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

@@ -40,9 +40,12 @@ export async function fetchTradeById(id: string): Promise<Trade> {
 export async function insertTrade(trade: NewTrade): Promise<Trade> {
   const supabase = createClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
   const { data, error } = await supabase
     .from('trades')
-    .insert(trade)
+    .insert({ ...trade, user_id: user.id })
     .select()
     .single()
 

@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { fetchTrades } from '@/lib/supabase/queries'
 import { Trade } from '@/types/trade'
 import TradeCard from '@/components/trades/TradeCard'
@@ -23,11 +22,10 @@ export default function HomePage() {
   const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
 
   return (
-    <div className="pb-24" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+    <div className="pb-32" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <Header title="Trade Companion" />
 
       <div className="px-5 pt-5">
-        {/* Summary bar */}
         {total > 0 && (
           <div className="rounded-2xl p-4 mb-5 flex items-center justify-between"
             style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -46,7 +44,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Trade list */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading trades...</div>
@@ -56,21 +53,13 @@ export default function HomePage() {
             <div className="text-4xl">📒</div>
             <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>No trades yet</div>
             <div className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
-              Tap the button below to log your first trade
+              Tap Log Trade below to log your first trade
             </div>
           </div>
         ) : (
           trades.map(trade => <TradeCard key={trade.id} trade={trade} />)
         )}
       </div>
-
-      {/* Floating Add button */}
-      <Link href="/add">
-        <button className="fixed bottom-24 right-5 w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg transition-all active:scale-95 z-20"
-          style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
-          +
-        </button>
-      </Link>
 
       <BottomNav />
     </div>
