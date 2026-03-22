@@ -259,7 +259,7 @@ export default function AddTradePage() {
     className="fixed inset-0 z-50 flex items-end justify-center"
     style={{ backgroundColor: 'rgba(0,0,0,0.7)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
     <div className="w-full rounded-t-3xl p-4 flex flex-col gap-3"
-      style={{ backgroundColor: 'var(--surface)', maxHeight: '85vh', overflowY: 'auto' }}>
+style={{ backgroundColor: 'var(--surface)', maxHeight: '75vh', overflowY: 'auto', paddingBottom: '80px' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
