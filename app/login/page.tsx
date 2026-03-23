@@ -38,14 +38,63 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4"
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ backgroundColor: 'var(--background)' }}>
+
+      {/* Value Proposition */}
+      <div className="w-full max-w-sm mb-8 flex flex-col items-center text-center gap-3">
+
+        {/* Badge */}
+        <span className="text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--accent)', border: '1px solid var(--accent)' }}>
+          Execution Discipline
+        </span>
+
+        {/* Title */}
+        <h1 className="text-3xl font-bold tracking-tight"
+          style={{ color: 'var(--text-primary)' }}>
+          Trade Companion
+        </h1>
+
+        {/* Tagline */}
+        <p className="text-lg font-semibold"
+          style={{ color: 'var(--accent)' }}>
+          Trade with intention.
+        </p>
+
+        {/* Subheadline */}
+        <p className="text-sm leading-relaxed"
+          style={{ color: 'var(--text-muted)' }}>
+          Stop trading before you think. Plan every entry. Track every decision. Let the data coach you.
+        </p>
+
+        {/* Stat Pills */}
+        <div className="flex flex-col gap-2 w-full mt-4">
+        {[
+  { value: '70%+', label: 'Trades lost to poor execution' },
+  { value: '3:1', label: 'RR minimum enforced' },
+  { value: '100%', label: 'Rule-follow rate tracked' },
+].map(stat => (
+  <div key={stat.value}
+    className="flex items-center justify-center px-5 py-3 rounded-xl gap-4"
+    style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+    <span className="text-base font-bold w-14 text-right shrink-0"
+      style={{ color: 'var(--accent)' }}>{stat.value}</span>
+    <span className="w-px h-4 shrink-0"
+      style={{ backgroundColor: 'var(--border)' }}/>
+    <span className="text-xs text-left"
+      style={{ color: 'var(--text-muted)' }}>{stat.label}</span>
+  </div>
+))}
+        </div>
+      </div>
+
+      {/* Login Form */}
       <div className="w-full max-w-sm p-8 rounded-2xl"
         style={{ backgroundColor: 'var(--surface-1)' }}>
-        <h1 className="text-2xl font-bold mb-2"
-          style={{ color: 'var(--text-primary)' }}>Trade Companion</h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>
-          {mode === 'login' && 'Sign in to your journal'}
+
+        <p className="text-sm mb-6 font-semibold" style={{ color: 'var(--text-muted)' }}>
+      
           {mode === 'signup' && 'Create your account'}
           {mode === 'forgot' && 'Reset your password'}
         </p>
@@ -57,6 +106,7 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
+            autoComplete="email"
             className="w-full px-4 py-3 rounded-xl text-sm outline-none"
             style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
           />
@@ -64,10 +114,10 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Password"
-              autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
             />
