@@ -15,6 +15,7 @@ const CHECKLIST = [
   { id: 'setup', label: 'This matches one of my allowed setups' },
   { id: 'session', label: 'Trade is within my allowed session' },
   { id: 'emotion', label: 'I am NOT entering out of revenge / FOMO / urgency' },
+  { id: 'news', label: 'I have checked economic news / high-impact events' },
 ]
 
 export default function AddTradePage() {
@@ -28,7 +29,7 @@ export default function AddTradePage() {
   const [customSetup, setCustomSetup] = useState('')
   const [showGatekeeper, setShowGatekeeper] = useState(false)
   const [checks, setChecks] = useState({
-    risk: false, rr: false, setup: false, session: false, emotion: false
+    risk: false, rr: false, setup: false, session: false, emotion: false, news: false
   })
 
   const [form, setForm] = useState<NewTrade>({
@@ -58,7 +59,7 @@ export default function AddTradePage() {
     setImagePreview(URL.createObjectURL(file))
   }
 
-  const allChecked = checks.risk && checks.rr && checks.setup && checks.session && checks.emotion
+  const allChecked = checks.risk && checks.rr && checks.setup && checks.session && checks.emotion && checks.news
 
   const handleOpenGatekeeper = () => {
     setChecks({ risk: false, rr: false, setup: false, session: false, emotion: false })
@@ -311,7 +312,7 @@ style={{ backgroundColor: 'var(--surface)', maxHeight: '75vh', overflowY: 'auto'
               </div>
               <span className="text-xs font-bold"
                 style={{ color: allChecked ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                {[checks.risk, checks.rr, checks.setup, checks.session, checks.emotion].filter(Boolean).length}/5
+                {[checks.risk, checks.rr, checks.setup, checks.session, checks.emotion, checks.news].filter(Boolean).length}/6
               </span>
             </div>
 
