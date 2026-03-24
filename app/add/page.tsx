@@ -62,7 +62,7 @@ export default function AddTradePage() {
   const allChecked = checks.risk && checks.rr && checks.setup && checks.session && checks.emotion && checks.news
 
   const handleOpenGatekeeper = () => {
-    setChecks({ risk: false, rr: false, setup: false, session: false, emotion: false })
+    setChecks({ risk: false, rr: false, setup: false, session: false, emotion: false, news: false })
     setShowGatekeeper(true)
   }
 
