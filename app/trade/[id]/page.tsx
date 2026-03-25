@@ -84,7 +84,7 @@ export default function TradeDetailPage() {
 
   return (
     <>
-      <div className="pb-40" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <div className="pb-96" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
         <Header title={trade.pair} />
         <div className="px-5 pt-5 flex flex-col gap-4">
 
@@ -157,7 +157,7 @@ export default function TradeDetailPage() {
 
           {isOpen && closing && (
             <div className="rounded-2xl p-4 flex flex-col gap-4"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)' }}>
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '80px' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Close Trade</div>
 
               <Field label="Outcome">
