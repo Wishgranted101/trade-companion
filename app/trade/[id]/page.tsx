@@ -20,6 +20,7 @@ export default function TradeDetailPage() {
     rr_result: '',
     emotion: 'calm' as Emotion,
     closing_note: '',
+    dollar_pnl: '',
   })
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function TradeDetailPage() {
         status: 'closed',
         outcome: closeForm.outcome,
         rr_result: parseFloat(closeForm.rr_result) || null,
+        dollar_pnl: parseFloat(closeForm.dollar_pnl) || null,
         emotion: closeForm.emotion,
         closing_note: closeForm.closing_note || null,
       })
@@ -115,7 +117,9 @@ export default function TradeDetailPage() {
             <Detail label="Target" value={trade.target_price} mono />
             <Detail label="RR Planned" value={`${trade.rr_planned}R`} mono />
             <Detail label="Followed Plan" value={trade.followed_plan ? 'Yes ✓' : 'No ✗'} />
-            <Detail label="Emotion" value={trade.emotion ?? '—'} />
+<Detail label="Emotion" value={trade.emotion ?? '—'} />
+{trade.lot_size && <Detail label="Lot Size" value={trade.lot_size} mono />}
+{trade.dollar_pnl !== null && trade.dollar_pnl !== undefined && <Detail label="Dollar P&L" value={`$${trade.dollar_pnl}`} mono />}
           </div>
 
           {/* Closing note */}
@@ -176,14 +180,24 @@ export default function TradeDetailPage() {
                 </div>
               </Field>
 
-              <Field label="RR Result">
-                <input type="number"
-                  className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-                  style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                  placeholder="e.g. 2.5"
-                  value={closeForm.rr_result}
-                  onChange={e => setCloseForm(p => ({ ...p, rr_result: e.target.value }))} />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+  <Field label="RR Result">
+    <input type="number"
+      className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+      style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      placeholder="e.g. 2.5"
+      value={closeForm.rr_result}
+      onChange={e => setCloseForm(p => ({ ...p, rr_result: e.target.value }))} />
+  </Field>
+  <Field label="Dollar P&L">
+    <input type="number"
+      className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+      style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      placeholder="e.g. 12.50"
+      value={closeForm.dollar_pnl}
+      onChange={e => setCloseForm(p => ({ ...p, dollar_pnl: e.target.value }))} />
+  </Field>
+</div>
 
               <Field label="Emotion">
                 <div className="grid grid-cols-3 gap-2">

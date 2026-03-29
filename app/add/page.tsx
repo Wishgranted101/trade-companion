@@ -47,6 +47,8 @@ export default function AddTradePage() {
     screenshot_url: null,
     status: 'open',
     closing_note: null,
+    lot_size: null,
+    dollar_pnl: null,
   })
 
   const set = (field: keyof NewTrade, value: any) =>
@@ -194,15 +196,27 @@ export default function AddTradePage() {
             </Field>
           </div>
 
-          {/* RR Planned */}
-          <Field label="RR Planned">
-            <input type="number"
-              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              placeholder="e.g. 3"
-              value={form.rr_planned || ''}
-              onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
-          </Field>
+          {/* RR Planned + Lot Size */}
+<div className="grid grid-cols-2 gap-3">
+  <Field label="RR Planned">
+    <input type="number"
+      className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      placeholder="e.g. 3"
+      value={form.rr_planned || ''}
+      onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
+  </Field>
+  <Field label="Lot Size">
+  <input type="number"
+  className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+  style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+  placeholder="e.g. 0.01"
+  step="0.01"
+  min="0.01"
+  value={form.lot_size ?? ''}
+  onChange={e => set('lot_size', e.target.value === '' ? null : parseFloat(e.target.value))} />
+  </Field>
+</div>
 
           {/* Screenshot */}
           <Field label="Chart Screenshot">

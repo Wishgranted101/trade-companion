@@ -19,6 +19,8 @@ export interface Trade {
   screenshot_url: string | null
   status: TradeStatus
   closing_note: string | null
+  lot_size: number | null
+  dollar_pnl: number | null
   created_at: string
 }
 
