@@ -129,71 +129,197 @@ export default function StatsPage() {
           </div>
 
           {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {['S','M','T','W','T','F','S'].map((d, i) => (
+          <div className="grid grid-cols-8 mb-1">
+            {['S','M','T','W','T','F','S','WK'].map((d, i) => (
               <div key={i} className="text-center text-xs font-bold py-1"
-                style={{ color: 'var(--text-secondary)' }}>{d}</div>
+                style={{ color: i === 7 ? 'var(--accent)' : 'var(--text-secondary)' }}>{d}</div>
             ))}
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = (i + 1).toString()
-              const dayTrades = tradesByDay[day] || []
-              const rr = getDayRR(dayTrades)
-              const isSelected = selectedDay === day
-              const wins = dayTrades.filter(t => t.outcome === 'win').length
-              const losses = dayTrades.filter(t => t.outcome === 'loss').length
+          {(() => {
+            const totalCells = firstDay + daysInMonth
+            const totalWeeks = Math.ceil(totalCells / 7)
+            const rows = []
 
-              return (
-                <button
-                  key={day}
-                  onClick={() => setSelectedDay(isSelected ? null : day)}
-                  className="rounded-xl p-1 flex flex-col items-center transition-all"
-                  style={{
-                    backgroundColor: isSelected ? 'var(--accent)' : getDayColor(dayTrades),
-                    border: `1px solid ${isSelected ? 'var(--accent)' : getDayBorder(dayTrades)}`,
-                    minHeight: '52px'
-                  }}>
-                  <span className="text-xs font-bold"
-                    style={{ color: isSelected ? '#fff' : 'var(--text-primary)' }}>
-                    {i + 1}
-                  </span>
-                  {dayTrades.length > 0 && (
-                    <>
-                      <span className="text-xs" style={{ color: isSelected ? '#fff' : 'var(--text-secondary)', fontSize: '9px' }}>
-                        {wins}W {losses}L
+            for (let week = 0; week < totalWeeks; week++) {
+              const cells = []
+              const weekTrades: Trade[] = []
+
+              for (let col = 0; col < 7; col++) {
+                const cellIndex = week * 7 + col
+                const dayNum = cellIndex - firstDay + 1
+
+                if (dayNum < 1 || dayNum > daysInMonth) {
+                  cells.push(<div key={`empty-${cellIndex}`} />)
+                } else {
+                  const day = dayNum.toString()
+                  const dayTrades = tradesByDay[day] || []
+                  weekTrades.push(...dayTrades)
+                  const rr = getDayRR(dayTrades)
+                  const isSelected = selectedDay === day
+                  const wins = dayTrades.filter(t => t.outcome === 'win').length
+                  const losses = dayTrades.filter(t => t.outcome === 'loss').length
+
+                  cells.push(
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDay(isSelected ? null : day)}
+                      className="rounded-xl p-1 flex flex-col items-center transition-all"
+                      style={{
+                        backgroundColor: isSelected ? 'var(--accent)' : getDayColor(dayTrades),
+                        border: `1px solid ${isSelected ? 'var(--accent)' : getDayBorder(dayTrades)}`,
+                        minHeight: '52px'
+                      }}>
+                      <span className="text-xs font-bold"
+                        style={{ color: isSelected ? '#fff' : 'var(--text-primary)' }}>
+                        {dayNum}
                       </span>
-                      {rr !== null && (
-  <span className="font-mono font-bold" style={{
-    fontSize: '9px',
-    color: isSelected ? '#fff' : rr >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
-  }}>
-    {rr >= 0 ? '+' : ''}{rr}R
-  </span>
-)}
-{(() => {
-  const pnl = getDayPnL(dayTrades)
-  return pnl !== null ? (
-    <span className="font-mono font-bold" style={{
-      fontSize: '9px',
-      color: isSelected ? '#fff' : pnl >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
-    }}>
-      {pnl >= 0 ? '+$' : '-$'}{Math.abs(pnl)}
-    </span>
-  ) : null
-})()}
+                      {dayTrades.length > 0 && (
+                        <>
+                          <span style={{ color: isSelected ? '#fff' : 'var(--text-secondary)', fontSize: '9px' }}>
+                            {wins}W {losses}L
+                          </span>
+                          {rr !== null && (
+                            <span className="font-mono font-bold" style={{
+                              fontSize: '9px',
+                              color: isSelected ? '#fff' : rr >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+                            }}>
+                              {rr >= 0 ? '+' : ''}{rr}R
+                            </span>
+                          )}
+                          {(() => {
+                            const pnl = getDayPnL(dayTrades)
+                            return pnl !== null ? (
+                              <span className="font-mono font-bold" style={{
+                                fontSize: '9px',
+                                color: isSelected ? '#fff' : pnl >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+                              }}>
+                                {pnl >= 0 ? '+$' : '-$'}{Math.abs(pnl)}
+                              </span>
+                            ) : null
+                          })()}
+                        </>
+                      )}
+                    </button>
+                  )
+                }
+              }
+
+              // Weekly total column
+              const weekRR = getDayRR(weekTrades)
+              const weekPnL = getDayPnL(weekTrades)
+              cells.push(
+                <div key={`week-${week}`}
+                  className="rounded-xl p-1 flex flex-col items-center justify-center"
+                  style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', minHeight: '52px' }}>
+                  {weekRR !== null ? (
+                    <>
+                      <span className="font-mono font-bold" style={{
+                        fontSize: '9px',
+                        color: weekRR >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+                      }}>
+                        {weekRR >= 0 ? '+' : ''}{weekRR}R
+                      </span>
+                      {weekPnL !== null && (
+                        <span className="font-mono font-bold" style={{
+                          fontSize: '9px',
+                          color: weekPnL >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+                        }}>
+                          {weekPnL >= 0 ? '+$' : '-$'}{Math.abs(weekPnL)}
+                        </span>
+                      )}
                     </>
+                  ) : (
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>—</span>
                   )}
-                </button>
+                </div>
               )
-            })}
-          </div>
+
+              rows.push(
+                <div key={`row-${week}`} className="grid grid-cols-8 gap-1 mb-1">
+                  {cells}
+                </div>
+              )
+            }
+
+            return <div>{rows}</div>
+          })()}
         </div>
+
+        {/* Monthly Summary Bar */}
+        {(() => {
+          const monthTrades = trades.filter(t => {
+            const d = new Date(t.created_at)
+            return d.getFullYear() === year && d.getMonth() === month && t.status === 'closed'
+          })
+          if (!monthTrades.length) return null
+
+          const tradingDays = Object.keys(tradesByDay)
+          const losingDays = tradingDays.filter(day => {
+            const dayTrades = tradesByDay[day]
+            const losses = dayTrades.filter(t => t.outcome === 'loss').length
+            const wins = dayTrades.filter(t => t.outcome === 'win').length
+            return losses > wins
+          }).length
+
+          const bestDay = tradingDays.reduce((best, day) => {
+            const rr = getDayRR(tradesByDay[day]) || 0
+            return rr > (getDayRR(tradesByDay[best]) || 0) ? day : best
+          }, tradingDays[0])
+
+          const worstDay = tradingDays.reduce((worst, day) => {
+            const rr = getDayRR(tradesByDay[day]) || 0
+            return rr < (getDayRR(tradesByDay[worst]) || 0) ? day : worst
+          }, tradingDays[0])
+
+          const bestRR = getDayRR(tradesByDay[bestDay])
+          const worstRR = getDayRR(tradesByDay[worstDay])
+
+          return (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-2xl p-3"
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="text-xs font-bold tracking-widest uppercase mb-1"
+                  style={{ color: 'var(--text-secondary)' }}>Best Day</div>
+                <div className="text-sm font-bold font-mono"
+                  style={{ color: 'var(--accent)' }}>
+                  {bestRR !== null ? `+${bestRR}R` : '—'}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {monthName.split(' ')[0]} {bestDay}
+                </div>
+              </div>
+              <div className="rounded-2xl p-3"
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="text-xs font-bold tracking-widest uppercase mb-1"
+                  style={{ color: 'var(--text-secondary)' }}>Worst Day</div>
+                <div className="text-sm font-bold font-mono"
+                  style={{ color: 'var(--accent-loss)' }}>
+                  {worstRR !== null ? `${worstRR}R` : '—'}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {monthName.split(' ')[0]} {worstDay}
+                </div>
+              </div>
+              <div className="rounded-2xl p-3"
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="text-xs font-bold tracking-widest uppercase mb-1"
+                  style={{ color: 'var(--text-secondary)' }}>Trading Days</div>
+                <div className="text-sm font-bold"
+                  style={{ color: 'var(--text-primary)' }}>{tradingDays.length}</div>
+              </div>
+              <div className="rounded-2xl p-3"
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="text-xs font-bold tracking-widest uppercase mb-1"
+                  style={{ color: 'var(--text-secondary)' }}>Losing Days</div>
+                <div className="text-sm font-bold"
+                  style={{ color: losingDays > 0 ? 'var(--accent-loss)' : 'var(--accent)' }}>{losingDays}</div>
+              </div>
+            </div>
+          )
+        })()}
+
 
         {/* Selected day trades */}
         {selectedDay && (
