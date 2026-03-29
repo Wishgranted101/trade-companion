@@ -64,6 +64,13 @@ export default function StatsPage() {
     return Math.round(total * 10) / 10
   }
 
+  const getDayPnL = (dayTrades: Trade[]) => {
+    const closed = dayTrades.filter(t => t.dollar_pnl !== null && t.dollar_pnl !== undefined)
+    if (!closed.length) return null
+    const total = closed.reduce((sum, t) => sum + (t.dollar_pnl || 0), 0)
+    return Math.round(total * 100) / 100
+  }
+
   const monthlyRR = getDayRR(trades.filter(t => {
     const d = new Date(t.created_at)
     return d.getFullYear() === year && d.getMonth() === month
@@ -162,13 +169,24 @@ export default function StatsPage() {
                         {wins}W {losses}L
                       </span>
                       {rr !== null && (
-                        <span className="font-mono font-bold" style={{
-                          fontSize: '9px',
-                          color: isSelected ? '#fff' : rr >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
-                        }}>
-                          {rr >= 0 ? '+' : ''}{rr}R
-                        </span>
-                      )}
+  <span className="font-mono font-bold" style={{
+    fontSize: '9px',
+    color: isSelected ? '#fff' : rr >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+  }}>
+    {rr >= 0 ? '+' : ''}{rr}R
+  </span>
+)}
+{(() => {
+  const pnl = getDayPnL(dayTrades)
+  return pnl !== null ? (
+    <span className="font-mono font-bold" style={{
+      fontSize: '9px',
+      color: isSelected ? '#fff' : pnl >= 0 ? 'var(--accent)' : 'var(--accent-loss)'
+    }}>
+      {pnl >= 0 ? '+$' : '-$'}{Math.abs(pnl)}
+    </span>
+  ) : null
+})()}
                     </>
                   )}
                 </button>
