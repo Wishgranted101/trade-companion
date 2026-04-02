@@ -79,7 +79,13 @@ export default function AddTradePage() {
       if (imageFile) {
         screenshot_url = await uploadScreenshot(imageFile)
       }
-      await insertTrade({ ...form, pair: finalPair, setup_type: finalSetup, screenshot_url })
+      await insertTrade({ 
+        ...form, 
+        pair: finalPair, 
+        setup_type: finalSetup, 
+        screenshot_url,
+        lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
+      })
       router.push('/')
     } catch (e) {
       console.error(e)
@@ -207,15 +213,21 @@ export default function AddTradePage() {
       onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
   </Field>
   <Field label="Lot Size">
-  <input type="number"
+  <input type="text"
+  inputMode="decimal"
   className="w-full rounded-xl px-3 py-3 text-sm font-mono"
   style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
   placeholder="e.g. 0.01"
-  step="0.01"
-  min="0.01"
   value={form.lot_size ?? ''}
-  onChange={e => set('lot_size', e.target.value === '' ? null : parseFloat(e.target.value))} />
-  </Field>
+  onChange={e => {
+    const val = e.target.value
+    if (val === '' || val === '0' || val === '0.' || val === '0.0') {
+      set('lot_size', val as any)
+    } else {
+      set('lot_size', parseFloat(val) || null)
+    }
+  }} />
+</Field>
 </div>
 
           {/* Screenshot */}

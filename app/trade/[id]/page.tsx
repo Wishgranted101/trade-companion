@@ -15,6 +15,7 @@ export default function TradeDetailPage() {
   const [saving, setSaving] = useState(false)
   const [lightbox, setLightbox] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [closeError, setCloseError] = useState('')
   const [closeForm, setCloseForm] = useState({
     outcome: 'win' as Outcome,
     rr_result: '',
@@ -35,6 +36,10 @@ export default function TradeDetailPage() {
 
   const handleCloseTrade = async () => {
     if (!trade) return
+    if (!closeForm.rr_result) return setCloseError('RR Result is required')
+    if (!closeForm.dollar_pnl) return setCloseError('Dollar P&L is required')
+    if (!closeForm.closing_note.trim()) return setCloseError('Closing note is required')
+    setCloseError('')
     setSaving(true)
     try {
       const updated = await updateTrade(trade.id, {
@@ -138,12 +143,12 @@ export default function TradeDetailPage() {
               <label className="text-xs font-bold tracking-widest uppercase"
                 style={{ color: 'var(--text-secondary)' }}>Chart Screenshot</label>
               <img
-                src={trade.screenshot_url}
-                alt="Trade chart"
-                className="w-full rounded-xl cursor-pointer active:scale-95 transition-all"
-                style={{ border: '1px solid var(--border)' }}
-                onClick={() => setLightbox(true)}
-              />
+  src={trade.screenshot_url}
+  alt="Trade chart"
+  className="w-full rounded-xl cursor-pointer active:scale-95 transition-all"
+  style={{ border: '1px solid var(--border)', maxHeight: '300px', objectFit: 'contain' }}
+  onClick={() => setLightbox(true)}
+/>
               <div className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
                 Tap image to expand
               </div>
@@ -217,7 +222,7 @@ export default function TradeDetailPage() {
                 </div>
               </Field>
 
-              <Field label="Closing Note (optional)">
+              <Field label="Closing Note">
                 <textarea
                   className="w-full rounded-xl px-3 py-3 text-sm resize-none"
                   style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: '80px' }}
@@ -227,8 +232,14 @@ export default function TradeDetailPage() {
                 />
               </Field>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setClosing(false)}
+              {closeError && (
+  <div className="rounded-xl p-3 text-xs font-semibold text-center"
+    style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
+    ⚠️ {closeError}
+  </div>
+)}
+<div className="grid grid-cols-2 gap-2">
+  <button onClick={() => setClosing(false)}
                   className="py-3 rounded-xl text-sm font-bold"
                   style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
                   Cancel

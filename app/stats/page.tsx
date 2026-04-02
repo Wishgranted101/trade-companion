@@ -169,7 +169,7 @@ export default function StatsPage() {
                       style={{
                         backgroundColor: isSelected ? 'var(--accent)' : getDayColor(dayTrades),
                         border: `1px solid ${isSelected ? 'var(--accent)' : getDayBorder(dayTrades)}`,
-                        minHeight: '52px'
+                        minHeight: '64px'
                       }}>
                       <span className="text-xs font-bold"
                         style={{ color: isSelected ? '#fff' : 'var(--text-primary)' }}>
