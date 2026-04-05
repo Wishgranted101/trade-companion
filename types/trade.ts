@@ -1,7 +1,7 @@
 export type Outcome = 'win' | 'loss' | 'breakeven'
 export type Session = 'london' | 'new_york' | 'asian' | 'overlap'
 export type Emotion = 'calm' | 'anxious' | 'confident' | 'frustrated' | 'fomo' | 'revenge'
-export type TradeStatus = 'open' | 'closed'
+export type TradeStatus = 'open' | 'closed' | 'draft'
 
 export interface Trade {
   id: string

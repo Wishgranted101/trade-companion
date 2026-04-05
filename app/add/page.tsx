@@ -79,10 +79,10 @@ export default function AddTradePage() {
       if (imageFile) {
         screenshot_url = await uploadScreenshot(imageFile)
       }
-      await insertTrade({ 
-        ...form, 
-        pair: finalPair, 
-        setup_type: finalSetup, 
+      await insertTrade({
+        ...form,
+        pair: finalPair,
+        setup_type: finalSetup,
         screenshot_url,
         lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
       })
@@ -93,200 +93,231 @@ export default function AddTradePage() {
     }
   }
 
-  return (
-    
-      <div className="pb-40" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
-        <Header title="Log Trade" />
-
-        <div className="px-5 pt-5 flex flex-col gap-5">
-
-          {/* Pair */}
-          <Field label="Pair">
-            <div className="grid grid-cols-4 gap-2">
-              {PAIRS.slice(0, 4).map(p => (
-                <button key={p} onClick={() => set('pair', p)}
-                  className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-                  style={{
-                    backgroundColor: form.pair === p ? 'var(--accent)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: form.pair === p ? '#fff' : 'var(--text-secondary)'
-                  }}>{p}</button>
-              ))}
-            </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {PAIRS.slice(4).map(p => (
-                <button key={p} onClick={() => set('pair', p)}
-                  className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-                  style={{
-                    backgroundColor: form.pair === p ? 'var(--accent)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: form.pair === p ? '#fff' : 'var(--text-secondary)'
-                  }}>{p}</button>
-              ))}
-            </div>
-            {form.pair === 'Other' && (
-              <input
-                className="w-full rounded-xl px-4 py-3 text-sm font-mono uppercase mt-2"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
-                placeholder="Type pair e.g. GBP/CAD"
-                value={customPair}
-                onChange={e => setCustomPair(e.target.value.toUpperCase())}
-              />
-            )}
-          </Field>
-
-          {/* Setup Type */}
-          <Field label="Setup Type">
-            <div className="grid grid-cols-2 gap-2">
-              {SETUPS.map(s => (
-                <button key={s} onClick={() => set('setup_type', s)}
-                  className="py-2 px-3 rounded-xl text-xs font-semibold text-left transition-all active:scale-95"
-                  style={{
-                    backgroundColor: form.setup_type === s ? 'var(--accent)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: form.setup_type === s ? '#fff' : 'var(--text-secondary)'
-                  }}>{s}</button>
-              ))}
-            </div>
-            {form.setup_type === 'Other' && (
-              <input
-                className="w-full rounded-xl px-4 py-3 text-sm mt-2"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
-                placeholder="Type setup e.g. Liquidity Grab"
-                value={customSetup}
-                onChange={e => setCustomSetup(e.target.value)}
-              />
-            )}
-          </Field>
-
-          {/* Session */}
-          <Field label="Session">
-            <div className="grid grid-cols-4 gap-2">
-              {(['london', 'new_york', 'asian', 'overlap'] as Session[]).map(s => (
-                <button key={s} onClick={() => set('session', s)}
-                  className="py-2 rounded-xl text-xs font-semibold capitalize transition-all active:scale-95"
-                  style={{
-                    backgroundColor: form.session === s ? 'var(--accent)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: form.session === s ? '#fff' : 'var(--text-secondary)'
-                  }}>{s.replace('_', ' ')}</button>
-              ))}
-            </div>
-          </Field>
-
-          {/* Prices */}
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Entry">
-              <input type="number"
-                className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                placeholder="0.00"
-                value={form.entry_price || ''}
-                onChange={e => set('entry_price', parseFloat(e.target.value) || 0)} />
-            </Field>
-            <Field label="Stop">
-              <input type="number"
-                className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                placeholder="0.00"
-                value={form.stop_price || ''}
-                onChange={e => set('stop_price', parseFloat(e.target.value) || 0)} />
-            </Field>
-            <Field label="Target">
-              <input type="number"
-                className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                placeholder="0.00"
-                value={form.target_price || ''}
-                onChange={e => set('target_price', parseFloat(e.target.value) || 0)} />
-            </Field>
-          </div>
-
-          {/* RR Planned + Lot Size */}
-<div className="grid grid-cols-2 gap-3">
-  <Field label="RR Planned">
-    <input type="number"
-      className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-      placeholder="e.g. 3"
-      value={form.rr_planned || ''}
-      onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
-  </Field>
-  <Field label="Lot Size">
-  <input type="text"
-  inputMode="decimal"
-  className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-  style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-  placeholder="e.g. 0.01"
-  value={form.lot_size ?? ''}
-  onChange={e => {
-    const val = e.target.value
-    if (val === '' || val === '0' || val === '0.' || val === '0.0') {
-      set('lot_size', val as any)
-    } else {
-      set('lot_size', parseFloat(val) || null)
+  const handleSaveDraft = async () => {
+    const finalPair = form.pair === 'Other' ? customPair : form.pair
+    const finalSetup = form.setup_type === 'Other' ? customSetup : form.setup_type
+    if (!finalPair || !finalSetup) return
+    setSaving(true)
+    try {
+      let screenshot_url = null
+      if (imageFile) screenshot_url = await uploadScreenshot(imageFile)
+      await insertTrade({
+        ...form,
+        pair: finalPair,
+        setup_type: finalSetup,
+        screenshot_url,
+        status: 'draft',
+        lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
+      })
+      router.push('/')
+    } catch (e) {
+      console.error(e)
+      setSaving(false)
     }
-  }} />
-</Field>
-</div>
+  }
 
-          {/* Screenshot */}
-          <Field label="Chart Screenshot">
+  return (
+    <div className="pb-40" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+      <Header title="Log Trade" />
+
+      <div className="px-5 pt-5 flex flex-col gap-5">
+
+        {/* Pair */}
+        <Field label="Pair">
+          <div className="grid grid-cols-4 gap-2">
+            {PAIRS.slice(0, 4).map(p => (
+              <button key={p} onClick={() => set('pair', p)}
+                className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: form.pair === p ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: form.pair === p ? '#fff' : 'var(--text-secondary)'
+                }}>{p}</button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2 mt-2">
+            {PAIRS.slice(4).map(p => (
+              <button key={p} onClick={() => set('pair', p)}
+                className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: form.pair === p ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: form.pair === p ? '#fff' : 'var(--text-secondary)'
+                }}>{p}</button>
+            ))}
+          </div>
+          {form.pair === 'Other' && (
             <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImage}
+              className="w-full rounded-xl px-4 py-3 text-sm font-mono uppercase mt-2"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+              placeholder="Type pair e.g. GBP/CAD"
+              value={customPair}
+              onChange={e => setCustomPair(e.target.value.toUpperCase())}
             />
-            {imagePreview ? (
-              <div className="relative">
-                <img src={imagePreview} alt="chart"
-                  className="w-full rounded-xl object-cover"
-                  style={{ maxHeight: '200px', border: '1px solid var(--border)' }} />
-                <button
-                  onClick={() => { setImageFile(null); setImagePreview(null) }}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: 'var(--accent-loss)', color: '#fff' }}>✕</button>
-              </div>
-            ) : (
-              <button onClick={() => fileRef.current?.click()}
-                className="w-full py-4 rounded-xl text-sm font-semibold transition-all active:scale-95"
-                style={{ backgroundColor: 'var(--surface)', border: '2px dashed var(--border)', color: 'var(--text-secondary)' }}>
-                📸 Tap to upload or capture screenshot
-              </button>
-            )}
-          </Field>
-
-          {imagePreview && (
-            <Field label="Trade Thesis / Strategy">
-              <textarea
-                className="w-full rounded-xl px-4 py-3 text-sm resize-none"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: '100px' }}
-                placeholder="Why are you taking this trade? What is your edge?"
-                value={thesis}
-                onChange={e => setThesis(e.target.value)}
-              />
-            </Field>
           )}
+        </Field>
 
-       {/* Open Trade Button */}
-       <button
+        {/* Setup Type */}
+        <Field label="Setup Type">
+          <div className="grid grid-cols-2 gap-2">
+            {SETUPS.map(s => (
+              <button key={s} onClick={() => set('setup_type', s)}
+                className="py-2 px-3 rounded-xl text-xs font-semibold text-left transition-all active:scale-95"
+                style={{
+                  backgroundColor: form.setup_type === s ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: form.setup_type === s ? '#fff' : 'var(--text-secondary)'
+                }}>{s}</button>
+            ))}
+          </div>
+          {form.setup_type === 'Other' && (
+            <input
+              className="w-full rounded-xl px-4 py-3 text-sm mt-2"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+              placeholder="Type setup e.g. Liquidity Grab"
+              value={customSetup}
+              onChange={e => setCustomSetup(e.target.value)}
+            />
+          )}
+        </Field>
+
+        {/* Session */}
+        <Field label="Session">
+          <div className="grid grid-cols-4 gap-2">
+            {(['london', 'new_york', 'asian', 'overlap'] as Session[]).map(s => (
+              <button key={s} onClick={() => set('session', s)}
+                className="py-2 rounded-xl text-xs font-semibold capitalize transition-all active:scale-95"
+                style={{
+                  backgroundColor: form.session === s ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: form.session === s ? '#fff' : 'var(--text-secondary)'
+                }}>{s.replace('_', ' ')}</button>
+            ))}
+          </div>
+        </Field>
+
+        {/* Prices */}
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Entry">
+            <input type="number"
+              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="0.00"
+              value={form.entry_price || ''}
+              onChange={e => set('entry_price', parseFloat(e.target.value) || 0)} />
+          </Field>
+          <Field label="Stop">
+            <input type="number"
+              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="0.00"
+              value={form.stop_price || ''}
+              onChange={e => set('stop_price', parseFloat(e.target.value) || 0)} />
+          </Field>
+          <Field label="Target">
+            <input type="number"
+              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="0.00"
+              value={form.target_price || ''}
+              onChange={e => set('target_price', parseFloat(e.target.value) || 0)} />
+          </Field>
+        </div>
+
+        {/* RR Planned + Lot Size */}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="RR Planned">
+            <input type="number"
+              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="e.g. 3"
+              value={form.rr_planned || ''}
+              onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
+          </Field>
+          <Field label="Lot Size">
+            <input type="text"
+              inputMode="decimal"
+              className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="e.g. 0.01"
+              value={form.lot_size ?? ''}
+              onChange={e => {
+                const val = e.target.value
+                if (val === '' || val === '0' || val === '0.' || val === '0.0') {
+                  set('lot_size', val as any)
+                } else {
+                  set('lot_size', parseFloat(val) || null)
+                }
+              }} />
+          </Field>
+        </div>
+
+        {/* Screenshot */}
+        <Field label="Chart Screenshot">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImage}
+          />
+          {imagePreview ? (
+            <div className="relative">
+              <img src={imagePreview} alt="chart"
+                className="w-full rounded-xl object-contain"
+                style={{ maxHeight: '300px', border: '1px solid var(--border)' }} />
+              <button
+                onClick={() => { setImageFile(null); setImagePreview(null) }}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ backgroundColor: 'var(--accent-loss)', color: '#fff' }}>✕</button>
+            </div>
+          ) : (
+            <button onClick={() => fileRef.current?.click()}
+              className="w-full py-4 rounded-xl text-sm font-semibold transition-all active:scale-95"
+              style={{ backgroundColor: 'var(--surface)', border: '2px dashed var(--border)', color: 'var(--text-secondary)' }}>
+              📸 Tap to upload or capture screenshot
+            </button>
+          )}
+        </Field>
+
+        {imagePreview && (
+          <Field label="Trade Thesis / Strategy">
+            <textarea
+              className="w-full rounded-xl px-4 py-3 text-sm resize-none"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: '100px' }}
+              placeholder="Why are you taking this trade? What is your edge?"
+              value={thesis}
+              onChange={e => setThesis(e.target.value)}
+            />
+          </Field>
+        )}
+
+        {/* Trade Action Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={handleSaveDraft}
+            disabled={saving}
+            className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-95"
+            style={{ backgroundColor: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            {saving ? 'Saving...' : '📋 Save Draft'}
+          </button>
+          <button
             onClick={handleOpenGatekeeper}
             className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-95"
             style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
             📂 Open Trade
           </button>
-
         </div>
 
-        {/* Gatekeeper Modal — inside main div */}
-        {showGatekeeper && (
-  <div
-    className="fixed inset-0 z-50 flex items-end justify-center"
-    style={{ backgroundColor: 'rgba(0,0,0,0.7)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-    <div className="w-full rounded-t-3xl p-4 flex flex-col gap-3"
-style={{ backgroundColor: 'var(--surface)', maxHeight: '75vh', overflowY: 'auto', paddingBottom: '80px' }}>
+      </div>
+
+      {/* Gatekeeper Modal */}
+      {showGatekeeper && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="w-full rounded-t-3xl p-4 flex flex-col gap-3"
+            style={{ backgroundColor: 'var(--surface)', maxHeight: '75vh', overflowY: 'auto', paddingBottom: '80px' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -368,13 +399,12 @@ style={{ backgroundColor: 'var(--surface)', maxHeight: '75vh', overflowY: 'auto'
                 {saving ? 'Saving...' : '✓ Commit Trade'}
               </button>
             </div>
-
           </div>
         </div>
-   )}
-   <BottomNav />
-</div>
-)
+      )}
+      <BottomNav />
+    </div>
+  )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
