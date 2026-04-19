@@ -58,7 +58,20 @@ export default function TradeDetailPage() {
       setSaving(false)
     }
   }
-
+  const handleActivateTrade = async () => {
+    if (!trade) return
+    setSaving(true)
+    try {
+      const updated = await updateTrade(trade.id, {
+        status: 'open',
+      })
+      setTrade(updated)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
   const handleEditSave = async () => {
     if (!trade) return
     setSaving(true)
@@ -87,6 +100,7 @@ export default function TradeDetailPage() {
   )
 
   const isOpen = trade.status === 'open'
+  const isDraft = trade.status === 'draft'
   const outcomeColor = trade.outcome === 'win' ? 'var(--accent)' : trade.outcome === 'loss' ? 'var(--accent-loss)' : 'var(--accent-be)'
 
   return (
@@ -102,8 +116,8 @@ export default function TradeDetailPage() {
               border: `1px solid ${isOpen ? 'var(--accent-be)' : outcomeColor}`
             }}>
             <span className="text-2xl font-bold"
-              style={{ color: isOpen ? 'var(--accent-be)' : outcomeColor }}>
-              {isOpen ? 'OPEN' : trade.outcome?.toUpperCase()}
+              style={{ color: isDraft ? 'var(--text-secondary)' : isOpen ? 'var(--accent-be)' : outcomeColor }}>
+              {isDraft ? 'DRAFT' : isOpen ? 'OPEN' : trade.outcome?.toUpperCase()}
             </span>
             {trade.rr_result !== null && (
               <span className="text-xl font-bold font-mono" style={{ color: outcomeColor }}>
@@ -154,7 +168,14 @@ export default function TradeDetailPage() {
               </div>
             </div>
           )}
-
+{/* Activate Trade — draft only */}
+{isDraft && (
+            <button onClick={handleActivateTrade} disabled={saving}
+              className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
+              style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+              {saving ? 'Activating...' : '🚀 Activate Trade'}
+            </button>
+          )}
           {/* Close Trade */}
           {isOpen && !closing && (
             <button onClick={() => setClosing(true)}
