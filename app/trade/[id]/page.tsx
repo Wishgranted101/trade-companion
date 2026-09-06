@@ -42,10 +42,12 @@ export default function TradeDetailPage() {
     setCloseError('')
     setSaving(true)
     try {
+      const rrMagnitude = Math.abs(parseFloat(closeForm.rr_result)) || null
+      const signedRR = rrMagnitude !== null && closeForm.outcome === 'loss' ? -rrMagnitude : rrMagnitude
       const updated = await updateTrade(trade.id, {
         status: 'closed',
         outcome: closeForm.outcome,
-        rr_result: parseFloat(closeForm.rr_result) || null,
+        rr_result: signedRR,
         dollar_pnl: parseFloat(closeForm.dollar_pnl) || null,
         emotion: closeForm.emotion,
         closing_note: closeForm.closing_note || null,
@@ -309,8 +311,13 @@ export default function TradeDetailPage() {
                   className="w-full rounded-xl px-3 py-3 text-sm font-mono"
                   style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                   placeholder="e.g. 2.5"
-                  value={trade.rr_result ?? ''}
-                  onChange={e => setTrade(p => p ? { ...p, rr_result: parseFloat(e.target.value) || null } : p)} />
+                  value={trade.rr_result !== null ? Math.abs(trade.rr_result) : ''}
+                  onChange={e => setTrade(p => {
+                    if (!p) return p
+                    const magnitude = Math.abs(parseFloat(e.target.value)) || null
+                    const signed = magnitude !== null && p.outcome === 'loss' ? -magnitude : magnitude
+                    return { ...p, rr_result: signed }
+                  })} />
               </Field>
 
               <Field label="Emotion">
