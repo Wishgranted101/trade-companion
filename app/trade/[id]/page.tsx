@@ -44,11 +44,13 @@ export default function TradeDetailPage() {
     try {
       const rrMagnitude = Math.abs(parseFloat(closeForm.rr_result)) || null
       const signedRR = rrMagnitude !== null && closeForm.outcome === 'loss' ? -rrMagnitude : rrMagnitude
+      const pnlMagnitude = Math.abs(parseFloat(closeForm.dollar_pnl)) || null
+      const signedPnl = pnlMagnitude !== null && closeForm.outcome === 'loss' ? -pnlMagnitude : pnlMagnitude
       const updated = await updateTrade(trade.id, {
         status: 'closed',
         outcome: closeForm.outcome,
         rr_result: signedRR,
-        dollar_pnl: parseFloat(closeForm.dollar_pnl) || null,
+        dollar_pnl: signedPnl,
         emotion: closeForm.emotion,
         closing_note: closeForm.closing_note || null,
       })
@@ -140,7 +142,7 @@ export default function TradeDetailPage() {
             <Detail label="Followed Plan" value={trade.followed_plan ? 'Yes ✓' : 'No ✗'} />
 <Detail label="Emotion" value={trade.emotion ?? '—'} />
 {trade.lot_size && <Detail label="Lot Size" value={trade.lot_size} mono />}
-{trade.dollar_pnl !== null && trade.dollar_pnl !== undefined && <Detail label="Dollar P&L" value={`$${trade.dollar_pnl}`} mono />}
+{trade.dollar_pnl !== null && trade.dollar_pnl !== undefined && <Detail label="Dollar P&L" value={`${trade.dollar_pnl < 0 ? '-' : ''}$${Math.abs(trade.dollar_pnl)}`} mono />}
           </div>
 
           {/* Closing note */}
