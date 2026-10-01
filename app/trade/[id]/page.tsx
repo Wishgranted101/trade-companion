@@ -42,9 +42,11 @@ export default function TradeDetailPage() {
     setCloseError('')
     setSaving(true)
     try {
-      const rrMagnitude = Math.abs(parseFloat(closeForm.rr_result)) || null
+      const rrParsed = parseFloat(closeForm.rr_result)
+      const rrMagnitude = Number.isNaN(rrParsed) ? null : Math.abs(rrParsed)
       const signedRR = rrMagnitude !== null && closeForm.outcome === 'loss' ? -rrMagnitude : rrMagnitude
-      const pnlMagnitude = Math.abs(parseFloat(closeForm.dollar_pnl)) || null
+      const pnlParsed = parseFloat(closeForm.dollar_pnl)
+      const pnlMagnitude = Number.isNaN(pnlParsed) ? null : Math.abs(pnlParsed)
       const signedPnl = pnlMagnitude !== null && closeForm.outcome === 'loss' ? -pnlMagnitude : pnlMagnitude
       const updated = await updateTrade(trade.id, {
         status: 'closed',
@@ -316,7 +318,8 @@ export default function TradeDetailPage() {
                   value={trade.rr_result !== null ? Math.abs(trade.rr_result) : ''}
                   onChange={e => setTrade(p => {
                     if (!p) return p
-                    const magnitude = Math.abs(parseFloat(e.target.value)) || null
+                    const parsed = parseFloat(e.target.value)
+                    const magnitude = Number.isNaN(parsed) ? null : Math.abs(parsed)
                     const signed = magnitude !== null && p.outcome === 'loss' ? -magnitude : magnitude
                     return { ...p, rr_result: signed }
                   })} />
