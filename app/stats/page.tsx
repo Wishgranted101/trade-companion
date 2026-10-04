@@ -14,7 +14,9 @@ export default function StatsPage() {
 
   useEffect(() => {
     fetchTradeStats().then(setStats).catch(console.error)
-    fetchTrades().then(setTrades).catch(console.error)
+    fetchTrades()
+  .then(all => setTrades(all.filter(t => t.status !== 'draft')))
+  .catch(console.error)
   }, [])
 
   const year = currentDate.getFullYear()
@@ -263,18 +265,18 @@ export default function StatsPage() {
             return losses > wins
           }).length
 
-          const bestDay = tradingDays.reduce((best, day) => {
-            const rr = getDayRR(tradesByDay[day]) || 0
-            return rr > (getDayRR(tradesByDay[best]) || 0) ? day : best
-          }, tradingDays[0])
+          const dayRRs = tradingDays
+  .map(day => ({ day, rr: getDayRR(tradesByDay[day]) }))
+  .filter((d): d is { day: string; rr: number } => d.rr !== null)
 
-          const worstDay = tradingDays.reduce((worst, day) => {
-            const rr = getDayRR(tradesByDay[day]) || 0
-            return rr < (getDayRR(tradesByDay[worst]) || 0) ? day : worst
-          }, tradingDays[0])
+const top = dayRRs.reduce<{ day: string; rr: number } | null>(
+  (b, d) => (!b || d.rr > b.rr ? d : b), null)
+const bottom = dayRRs.reduce<{ day: string; rr: number } | null>(
+  (w, d) => (!w || d.rr < w.rr ? d : w), null)
 
-          const bestRR = getDayRR(tradesByDay[bestDay])
-          const worstRR = getDayRR(tradesByDay[worstDay])
+// Best day must be a real winning day, worst day a real losing day
+const best = top && top.rr > 0 ? top : null
+const worst = bottom && bottom.rr < 0 ? bottom : null
 
           return (
             <div className="grid grid-cols-2 gap-2">
@@ -283,24 +285,24 @@ export default function StatsPage() {
                 <div className="text-xs font-bold tracking-widest uppercase mb-1"
                   style={{ color: 'var(--text-secondary)' }}>Best Day</div>
                 <div className="text-sm font-bold font-mono"
-                  style={{ color: 'var(--accent)' }}>
-                  {bestRR !== null ? `+${bestRR}R` : '—'}
-                </div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {monthName.split(' ')[0]} {bestDay}
-                </div>
+  style={{ color: best ? 'var(--accent)' : 'var(--text-secondary)' }}>
+  {best ? `+${best.rr}R` : '—'}
+</div>
+<div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+  {best ? `${monthName.split(' ')[0]} ${best.day}` : 'No winning day yet'}
+</div>
               </div>
               <div className="rounded-2xl p-3"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="text-xs font-bold tracking-widest uppercase mb-1"
                   style={{ color: 'var(--text-secondary)' }}>Worst Day</div>
                 <div className="text-sm font-bold font-mono"
-                  style={{ color: 'var(--accent-loss)' }}>
-                  {worstRR !== null ? `${worstRR}R` : '—'}
-                </div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {monthName.split(' ')[0]} {worstDay}
-                </div>
+  style={{ color: worst ? 'var(--accent-loss)' : 'var(--text-secondary)' }}>
+  {worst ? `${worst.rr}R` : '—'}
+</div>
+<div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+  {worst ? `${monthName.split(' ')[0]} ${worst.day}` : 'No losing day yet'}
+</div>
               </div>
               <div className="rounded-2xl p-3"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
