@@ -98,7 +98,7 @@ export async function fetchTradeStats() {
   const { data, error } = await supabase
     .from('trades')
     .select('outcome, rr_result, followed_plan')
-
+    .or('status.neq.draft,status.is.null')
   if (error) {
     console.error('fetchTradeStats error:', error.message)
     throw new Error(error.message)
