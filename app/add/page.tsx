@@ -1,7 +1,7 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { insertTrade, uploadScreenshot } from '@/lib/supabase/queries'
+import { insertTrade, uploadScreenshot, fetchAccountSize, saveAccountSize } from '@/lib/supabase/queries'
 import { NewTrade, Session } from '@/types/trade'
 import Header from '@/components/layout/Header'
 import BottomNav from '@/components/layout/BottomNav'
@@ -48,6 +48,13 @@ export default function AddTradePage() {
   const [customPair, setCustomPair] = useState('')
   const [customSetup, setCustomSetup] = useState('')
   const [showGatekeeper, setShowGatekeeper] = useState(false)
+  const [accountSize, setAccountSize] = useState<number | null>(null)
+  const [editingAccount, setEditingAccount] = useState(false)
+  const [accountInput, setAccountInput] = useState('')
+
+  useEffect(() => {
+    fetchAccountSize().then(setAccountSize)
+  }, [])
   const [checks, setChecks] = useState({
     risk: false, rr: false, setup: false, session: false, emotion: false, news: false
   })
@@ -89,7 +96,20 @@ export default function AddTradePage() {
   const pricesEntered = form.entry_price > 0 && form.stop_price > 0 && form.target_price > 0
   const sameSide = pricesEntered && (form.stop_price - form.entry_price) * (form.target_price - form.entry_price) > 0
   const rrBelowRule = pricesEntered && !sameSide && form.rr_planned > 0 && form.rr_planned < 3
+  const riskPct = riskDollars !== null && accountSize ? Math.round((riskDollars / accountSize) * 10000) / 100 : null
+  const overRisk = pricesEntered && !sameSide && riskPct !== null && riskPct > 1
 
+  const handleSaveAccount = async () => {
+    const val = parseFloat(accountInput)
+    if (!val || val <= 0) return
+    try {
+      await saveAccountSize(val)
+      setAccountSize(val)
+      setEditingAccount(false)
+    } catch (e) {
+      console.error(e)
+    }
+  }
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -283,12 +303,34 @@ export default function AddTradePage() {
           </Field>
         </div>
 
+        {/* Account size */}
+        <div className="flex items-center justify-between rounded-xl px-3 py-2 text-xs"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <span className="font-bold tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>Account size</span>
+          {editingAccount ? (
+            <div className="flex items-center gap-2">
+              <input type="text" inputMode="decimal"
+                className="w-24 rounded-lg px-2 py-1 text-sm font-mono"
+                style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+                value={accountInput}
+                onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) setAccountInput(e.target.value) }} />
+              <button onClick={handleSaveAccount} className="font-bold" style={{ color: 'var(--accent)' }}>Save</button>
+              <button onClick={() => setEditingAccount(false)} style={{ color: 'var(--text-secondary)' }}>Cancel</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setAccountInput(accountSize !== null ? String(accountSize) : ''); setEditingAccount(true) }}
+              className="font-mono font-bold" style={{ color: 'var(--text-primary)' }}>
+              {accountSize !== null ? `$${accountSize.toFixed(2)}` : 'Set size'} ✎
+            </button>
+          )}
+        </div>
         {/* Pre-trade check */}
         {pricesEntered && (
           <div className="rounded-xl p-3 text-xs flex flex-col gap-1"
             style={{
-              backgroundColor: sameSide || rrBelowRule ? '#ff4d4d15' : 'var(--surface)',
-              border: `1px solid ${sameSide || rrBelowRule ? 'var(--accent-loss)' : 'var(--border)'}`,
+              backgroundColor: sameSide || rrBelowRule || overRisk ? '#ff4d4d15' : 'var(--surface)',
+              border: `1px solid ${sameSide || rrBelowRule || overRisk ? 'var(--accent-loss)' : 'var(--border)'}`,
             }}>
             {sameSide ? (
               <div className="font-semibold" style={{ color: 'var(--accent-loss)' }}>
@@ -308,6 +350,13 @@ export default function AddTradePage() {
                       ? 'Enter a lot size to see your dollar risk'
                       : 'Dollar risk is only calculated for XAU/USD, EUR/USD, GBP/USD and USD/JPY'}
                 </div>
+                {riskPct !== null && (
+                  <div className="font-semibold" style={{ color: overRisk ? 'var(--accent-loss)' : 'var(--accent)' }}>
+                    {overRisk
+                      ? `⚠️ Risk is ${riskPct.toFixed(2)}% of your account, over your 1% rule`
+                      : `✓ Risk is ${riskPct.toFixed(2)}% of your account`}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -395,7 +444,9 @@ export default function AddTradePage() {
               {CHECKLIST.map(item => {
                 const checked = checks[item.id as keyof typeof checks]
                 const label = item.id === 'rr' && rrBelowRule
-                  ? `Planned RR is ${form.rr_planned}:1 (under 3:1). I've decided this setup is still worth taking`
+                ? `Planned RR is ${form.rr_planned}:1 (under 3:1). I've decided this setup is still worth taking`
+                : item.id === 'risk' && overRisk && riskPct !== null
+                  ? `Risk is ${riskPct.toFixed(2)}% of account (over 1%). I've decided to take this risk`
                   : item.label
                 return (
                   <button
@@ -427,7 +478,7 @@ export default function AddTradePage() {
               <div className="flex-1 rounded-full h-2" style={{ backgroundColor: 'var(--surface-2)' }}>
                 <div className="h-2 rounded-full transition-all"
                   style={{
-                    width: `${([checks.risk, checks.rr, checks.setup, checks.session, checks.emotion].filter(Boolean).length / 5) * 100}%`,
+                    width: `${([checks.risk, checks.rr, checks.setup, checks.session, checks.emotion, checks.news].filter(Boolean).length / 6) * 100}%`,
                     backgroundColor: allChecked ? 'var(--accent)' : 'var(--accent-be)'
                   }} />
               </div>

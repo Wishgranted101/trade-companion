@@ -160,3 +160,35 @@ function compressImage(file: File, maxWidth: number, quality: number): Promise<B
     img.src = url
   })
 }
+// ── Account size (for the 1% risk rule) ───────────────────────────
+export async function fetchAccountSize(): Promise<number | null> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('account_settings')
+    .select('account_size')
+    .maybeSingle()
+
+  if (error) {
+    console.error('fetchAccountSize error:', error.message)
+    return null
+  }
+
+  return data ? Number(data.account_size) : null
+}
+
+export async function saveAccountSize(size: number): Promise<void> {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('account_settings')
+    .upsert({ user_id: user.id, account_size: size, updated_at: new Date().toISOString() })
+
+  if (error) {
+    console.error('saveAccountSize error:', error.message)
+    throw new Error(error.message)
+  }
+}
