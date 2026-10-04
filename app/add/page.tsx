@@ -18,6 +18,26 @@ const CHECKLIST = [
   { id: 'news', label: 'I have checked economic news / high-impact events' },
 ]
 
+const DOLLAR_PAIRS = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY']
+
+// Planned RR from entry, stop and target (reward distance / risk distance)
+const calcRR = (entry: number, stop: number, target: number) => {
+  const risk = Math.abs(entry - stop)
+  const reward = Math.abs(target - entry)
+  if (!entry || !stop || !target || risk === 0) return 0
+  return Math.round((reward / risk) * 100) / 100
+}
+
+// Dollars gained or lost per 1.0 of price movement at the given lot size.
+// Only pairs with a known contract size are supported; others return null.
+const dollarsPerPoint = (pair: string, lots: number, price: number): number | null => {
+  if (!lots || lots <= 0) return null
+  if (pair === 'XAU/USD') return lots * 100
+  if (pair === 'EUR/USD' || pair === 'GBP/USD') return lots * 100000
+  if (pair === 'USD/JPY') return price > 0 ? (lots * 100000) / price : null
+  return null
+}
+
 export default function AddTradePage() {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -53,6 +73,22 @@ export default function AddTradePage() {
 
   const set = (field: keyof NewTrade, value: any) =>
     setForm(prev => ({ ...prev, [field]: value }))
+
+  const setPrice = (field: 'entry_price' | 'stop_price' | 'target_price', value: number) =>
+    setForm(prev => {
+      const next = { ...prev, [field]: value }
+      return { ...next, rr_planned: calcRR(next.entry_price, next.stop_price, next.target_price) }
+    })
+
+  const lots = parseFloat(String(form.lot_size ?? ''))
+  const perPoint = dollarsPerPoint(form.pair, lots, form.entry_price)
+  const riskDistance = Math.abs(form.entry_price - form.stop_price)
+  const rewardDistance = Math.abs(form.target_price - form.entry_price)
+  const riskDollars = perPoint !== null && riskDistance > 0 ? perPoint * riskDistance : null
+  const rewardDollars = perPoint !== null && rewardDistance > 0 ? perPoint * rewardDistance : null
+  const pricesEntered = form.entry_price > 0 && form.stop_price > 0 && form.target_price > 0
+  const sameSide = pricesEntered && (form.stop_price - form.entry_price) * (form.target_price - form.entry_price) > 0
+  const rrBelowRule = pricesEntered && !sameSide && form.rr_planned > 0 && form.rr_planned < 3
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -204,7 +240,7 @@ export default function AddTradePage() {
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               placeholder="0.00"
               value={form.entry_price || ''}
-              onChange={e => set('entry_price', parseFloat(e.target.value) || 0)} />
+              onChange={e => setPrice('entry_price', parseFloat(e.target.value) || 0)} />
           </Field>
           <Field label="Stop">
             <input type="number"
@@ -212,7 +248,7 @@ export default function AddTradePage() {
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               placeholder="0.00"
               value={form.stop_price || ''}
-              onChange={e => set('stop_price', parseFloat(e.target.value) || 0)} />
+              onChange={e => setPrice('stop_price', parseFloat(e.target.value) || 0)} />
           </Field>
           <Field label="Target">
             <input type="number"
@@ -220,19 +256,18 @@ export default function AddTradePage() {
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               placeholder="0.00"
               value={form.target_price || ''}
-              onChange={e => set('target_price', parseFloat(e.target.value) || 0)} />
+              onChange={e => setPrice('target_price', parseFloat(e.target.value) || 0)} />
           </Field>
         </div>
 
         {/* RR Planned + Lot Size */}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="RR Planned">
-            <input type="number"
+          <Field label="RR Planned (auto)">
+            <input type="text" readOnly
               className="w-full rounded-xl px-3 py-3 text-sm font-mono"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              placeholder="e.g. 3"
-              value={form.rr_planned || ''}
-              onChange={e => set('rr_planned', parseFloat(e.target.value) || 0)} />
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: rrBelowRule ? 'var(--accent-loss)' : 'var(--text-primary)' }}
+              placeholder="From entry, stop, target"
+              value={form.rr_planned || ''} />
           </Field>
           <Field label="Lot Size">
             <input type="text"
@@ -251,6 +286,36 @@ export default function AddTradePage() {
               }} />
           </Field>
         </div>
+
+        {/* Pre-trade check */}
+        {pricesEntered && (
+          <div className="rounded-xl p-3 text-xs flex flex-col gap-1"
+            style={{
+              backgroundColor: sameSide || rrBelowRule ? '#ff4d4d15' : 'var(--surface)',
+              border: `1px solid ${sameSide || rrBelowRule ? 'var(--accent-loss)' : 'var(--border)'}`,
+            }}>
+            {sameSide ? (
+              <div className="font-semibold" style={{ color: 'var(--accent-loss)' }}>
+                ⚠️ Stop and target are on the same side of entry. Check your prices.
+              </div>
+            ) : (
+              <>
+                <div className="font-semibold" style={{ color: rrBelowRule ? 'var(--accent-loss)' : 'var(--accent)' }}>
+                  {rrBelowRule
+                    ? `⚠️ Planned RR is ${form.rr_planned}:1, under your 3:1 rule. Only take it if the setup is truly worth it.`
+                    : `✓ Planned RR is ${form.rr_planned}:1`}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  {riskDollars !== null && rewardDollars !== null
+                    ? `Risk $${riskDollars.toFixed(2)} to make $${rewardDollars.toFixed(2)} at ${lots} lots`
+                    : DOLLAR_PAIRS.includes(form.pair)
+                      ? 'Enter a lot size to see your dollar risk'
+                      : 'Dollar risk is only calculated for XAU/USD, EUR/USD, GBP/USD and USD/JPY'}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Screenshot */}
         <Field label="Chart Screenshot">
@@ -333,6 +398,9 @@ export default function AddTradePage() {
             <div className="flex flex-col gap-3">
               {CHECKLIST.map(item => {
                 const checked = checks[item.id as keyof typeof checks]
+                const label = item.id === 'rr' && rrBelowRule
+                  ? `Planned RR is ${form.rr_planned}:1 (under 3:1). I've decided this setup is still worth taking`
+                  : item.label
                 return (
                   <button
                     key={item.id}
@@ -352,7 +420,7 @@ export default function AddTradePage() {
                     </div>
                     <span className="text-sm font-semibold"
                       style={{ color: checked ? 'var(--accent)' : 'var(--text-primary)' }}>
-                      {item.label}
+                      {label}
                     </span>
                   </button>
                 )

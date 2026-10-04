@@ -6,6 +6,12 @@ import { Trade, Outcome, Emotion } from '@/types/trade'
 import Header from '@/components/layout/Header'
 import BottomNav from '@/components/layout/BottomNav'
 
+function computeRR(pnl: string, risk: string): string {
+  const p = parseFloat(pnl)
+  const r = parseFloat(risk)
+  if (Number.isNaN(p) || Number.isNaN(r) || r <= 0) return ''
+  return String(Math.round((Math.abs(p) / r) * 100) / 100)
+}
 export default function TradeDetailPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -22,6 +28,7 @@ export default function TradeDetailPage() {
     emotion: 'calm' as Emotion,
     closing_note: '',
     dollar_pnl: '',
+    risk_amount: '',
   })
 
   useEffect(() => {
@@ -213,13 +220,16 @@ export default function TradeDetailPage() {
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
-  <Field label="RR Result">
+  <Field label="Risk Amount ($)">
     <input type="number"
       className="w-full rounded-xl px-3 py-3 text-sm font-mono"
       style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-      placeholder="e.g. 2.5"
-      value={closeForm.rr_result}
-      onChange={e => setCloseForm(p => ({ ...p, rr_result: e.target.value }))} />
+      placeholder="e.g. 73.53"
+      value={closeForm.risk_amount}
+      onChange={e => setCloseForm(p => {
+        const rr = computeRR(p.dollar_pnl, e.target.value)
+        return { ...p, risk_amount: e.target.value, ...(rr !== '' ? { rr_result: rr } : {}) }
+      })} />
   </Field>
   <Field label="Dollar P&L">
     <input type="number"
@@ -227,9 +237,24 @@ export default function TradeDetailPage() {
       style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
       placeholder="e.g. 12.50"
       value={closeForm.dollar_pnl}
-      onChange={e => setCloseForm(p => ({ ...p, dollar_pnl: e.target.value }))} />
+      onChange={e => setCloseForm(p => {
+        const rr = computeRR(e.target.value, p.risk_amount)
+        return { ...p, dollar_pnl: e.target.value, ...(rr !== '' ? { rr_result: rr } : {}) }
+      })} />
   </Field>
 </div>
+
+              <Field label="RR Result">
+                <input type="number"
+                  className="w-full rounded-xl px-3 py-3 text-sm font-mono"
+                  style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  placeholder="Fills in from Risk and P&L"
+                  value={closeForm.rr_result}
+                  onChange={e => setCloseForm(p => ({ ...p, rr_result: e.target.value }))} />
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Auto = P&L ÷ Risk. Enter positive numbers; Loss makes it negative.
+                </div>
+              </Field>
 
               <Field label="Emotion">
                 <div className="grid grid-cols-3 gap-2">
