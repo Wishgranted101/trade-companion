@@ -278,11 +278,7 @@ export default function AddTradePage() {
               value={form.lot_size ?? ''}
               onChange={e => {
                 const val = e.target.value
-                if (val === '' || val === '0' || val === '0.' || val === '0.0') {
-                  set('lot_size', val as any)
-                } else {
-                  set('lot_size', parseFloat(val) || null)
-                }
+                if (/^\d*\.?\d*$/.test(val)) set('lot_size', val as any)
               }} />
           </Field>
         </div>
