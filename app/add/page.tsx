@@ -53,9 +53,20 @@ export default function AddTradePage() {
   const [accountInput, setAccountInput] = useState('')
   const [manualRisk, setManualRisk] = useState('')
 
+  const [platform, setPlatform] = useState<'MT5' | 'cTrader demo'>('MT5')
+
   useEffect(() => {
     fetchAccountSize().then(setAccountSize)
+    try {
+      const saved = localStorage.getItem('tc_platform')
+      if (saved === 'MT5' || saved === 'cTrader demo') setPlatform(saved)
+    } catch {}
   }, [])
+
+  const choosePlatform = (p: 'MT5' | 'cTrader demo') => {
+    setPlatform(p)
+    try { localStorage.setItem('tc_platform', p) } catch {}
+  }
   const [checks, setChecks] = useState({
     risk: false, rr: false, setup: false, session: false, emotion: false, news: false
   })
@@ -146,8 +157,9 @@ export default function AddTradePage() {
         setup_type: finalSetup,
         screenshot_url,
         followed_plan: !(rrBelowRule || overRisk),
+        run_label: platform,
         lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
-      })
+      } as NewTrade)
       router.push('/')
     } catch (e) {
       console.error(e)
@@ -163,14 +175,15 @@ export default function AddTradePage() {
     try {
       let screenshot_url = null
       if (imageFile) screenshot_url = await uploadScreenshot(imageFile)
-      await insertTrade({
-        ...form,
-        pair: finalPair,
-        setup_type: finalSetup,
-        screenshot_url,
-        status: 'draft',
-        lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
-      })
+        await insertTrade({
+          ...form,
+          pair: finalPair,
+          setup_type: finalSetup,
+          screenshot_url,
+          status: 'draft',
+          run_label: platform,
+          lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
+        } as NewTrade)
       router.push('/')
     } catch (e) {
       console.error(e)
@@ -183,6 +196,20 @@ export default function AddTradePage() {
       <Header title="Log Trade" />
 
       <div className="px-5 pt-5 flex flex-col gap-5">
+        {/* Platform */}
+        <Field label="Platform">
+          <div className="grid grid-cols-2 gap-2">
+            {(['MT5', 'cTrader demo'] as const).map(p => (
+              <button key={p} onClick={() => choosePlatform(p)}
+                className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: platform === p ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: platform === p ? '#fff' : 'var(--text-secondary)'
+                }}>{p}</button>
+            ))}
+          </div>
+        </Field>
 
         {/* Pair */}
         <Field label="Pair">
