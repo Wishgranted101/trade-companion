@@ -303,24 +303,27 @@ export default function AddTradePage() {
           </Field>
         </div>
 
-        {/* Account size */}
-        <div className="flex items-center justify-between rounded-xl px-3 py-2 text-xs"
+               {/* Account size */}
+               <div className="flex items-center justify-between rounded-xl px-3 py-2 text-xs"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
           <span className="font-bold tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>Account size</span>
           {editingAccount ? (
             <div className="flex items-center gap-2">
               <input type="text" inputMode="decimal"
                 className="w-24 rounded-lg px-2 py-1 text-sm font-mono"
-                style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
                 value={accountInput}
                 onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) setAccountInput(e.target.value) }} />
-              <button onClick={handleSaveAccount} className="font-bold" style={{ color: 'var(--accent)' }}>Save</button>
-              <button onClick={() => setEditingAccount(false)} style={{ color: 'var(--text-secondary)' }}>Cancel</button>
+              <button onClick={handleSaveAccount} className="font-bold"
+                style={{ color: 'var(--accent)', backgroundColor: 'transparent', border: 'none' }}>Save</button>
+              <button onClick={() => setEditingAccount(false)}
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'transparent', border: 'none' }}>Cancel</button>
             </div>
           ) : (
             <button
               onClick={() => { setAccountInput(accountSize !== null ? String(accountSize) : ''); setEditingAccount(true) }}
-              className="font-mono font-bold" style={{ color: 'var(--text-primary)' }}>
+              className="font-mono font-bold"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'transparent', border: 'none' }}>
               {accountSize !== null ? `$${accountSize.toFixed(2)}` : 'Set size'} ✎
             </button>
           )}
