@@ -17,8 +17,10 @@ export default function HomePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const wins = trades.filter(t => t.outcome === 'win').length
-  const total = trades.length
+  // Drafts are pending orders, so they stay out of the summary numbers
+  const counted = trades.filter(t => t.status !== 'draft')
+  const wins = counted.filter(t => t.outcome === 'win').length
+  const total = counted.length
   const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
 
   return (
@@ -57,7 +59,16 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          trades.map(trade => <TradeCard key={trade.id} trade={trade} />)
+          trades.map(trade => (
+            <div key={trade.id}>
+              {trade.status === 'draft' && (
+                <div className="text-xs font-bold tracking-widest mb-1" style={{ color: 'var(--accent-be)' }}>
+                  DRAFT · not counted in stats
+                </div>
+              )}
+              <TradeCard trade={trade} />
+            </div>
+          ))
         )}
       </div>
 

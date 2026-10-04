@@ -1,23 +1,50 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { fetchTradeStats } from '@/lib/supabase/queries'
 import { fetchTrades } from '@/lib/supabase/queries'
 import { Trade } from '@/types/trade'
 import Header from '@/components/layout/Header'
 import BottomNav from '@/components/layout/BottomNav'
 
+type TradeRow = Trade & { run_label?: string | null }
+type Block = 'All' | 'cTrader demo' | 'MT5'
+const BLOCKS: Block[] = ['All', 'cTrader demo', 'MT5']
+
 export default function StatsPage() {
-  const [stats, setStats] = useState<any>(null)
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [trades, setTrades] = useState<TradeRow[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [block, setBlock] = useState<Block>('All')
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState(new Date())
 
   useEffect(() => {
-    fetchTradeStats().then(setStats).catch(console.error)
     fetchTrades()
-  .then(all => setTrades(all.filter(t => t.status !== 'draft')))
-  .catch(console.error)
+      .then(all => setTrades(all.filter(t => t.status !== 'draft') as TradeRow[]))
+      .catch(console.error)
+      .finally(() => setLoaded(true))
   }, [])
+
+  // Trades in the selected block (drafts are already left out)
+  const shown: TradeRow[] = block === 'All'
+    ? trades
+    : trades.filter(t => (t.run_label ?? 'cTrader demo') === block)
+
+  // Top stat cards, worked out from the selected block
+  const total = shown.length
+  const wins = shown.filter(t => t.outcome === 'win').length
+  const losses = shown.filter(t => t.outcome === 'loss').length
+  const followed = shown.filter(t => t.followed_plan).length
+  const withRR = shown.filter(t => t.rr_result !== null && t.rr_result !== undefined)
+  const avgRR = withRR.length > 0
+    ? withRR.reduce((sum, t) => sum + (t.rr_result || 0), 0) / withRR.length
+    : 0
+  const stats = loaded ? {
+    total,
+    wins,
+    losses,
+    winRate: total > 0 ? Math.round((wins / total) * 100) : 0,
+    followedPlanRate: total > 0 ? Math.round((followed / total) * 100) : 0,
+    avgRR: Math.round(avgRR * 100) / 100,
+  } : null
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -28,7 +55,7 @@ export default function StatsPage() {
 
   // Group trades by day
   const tradesByDay: Record<string, Trade[]> = {}
-  trades.forEach(trade => {
+  shown.forEach(trade => {
     const date = new Date(trade.created_at)
     if (date.getFullYear() === year && date.getMonth() === month) {
       const key = date.getDate().toString()
@@ -73,7 +100,7 @@ export default function StatsPage() {
     return Math.round(total * 100) / 100
   }
 
-  const monthlyRR = getDayRR(trades.filter(t => {
+  const monthlyRR = getDayRR(shown.filter(t => {
     const d = new Date(t.created_at)
     return d.getFullYear() === year && d.getMonth() === month
   }))
@@ -82,6 +109,23 @@ export default function StatsPage() {
     <div className="pb-24" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <Header title="Stats" />
       <div className="px-5 pt-5 flex flex-col gap-4">
+
+        {/* Block toggle */}
+        <div className="grid grid-cols-3 gap-2">
+          {BLOCKS.map(b => (
+            <button
+              key={b}
+              onClick={() => { setBlock(b); setSelectedDay(null) }}
+              className="py-2 rounded-xl text-xs font-bold"
+              style={{
+                backgroundColor: block === b ? 'var(--accent)' : 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: block === b ? '#fff' : 'var(--text-secondary)'
+              }}>
+              {b}
+            </button>
+          ))}
+        </div>
 
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
@@ -114,7 +158,7 @@ export default function StatsPage() {
               ‹
             </button>
             <div className="text-center">
-            <div className="text-base font-bold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>{monthName}</div>
+              <div className="text-base font-bold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>{monthName}</div>
               {monthlyRR !== null && (
                 <div className="text-xs font-mono mt-0.5"
                   style={{ color: monthlyRR >= 0 ? 'var(--accent)' : 'var(--accent-loss)' }}>
@@ -251,7 +295,7 @@ export default function StatsPage() {
 
         {/* Monthly Summary Bar */}
         {(() => {
-          const monthTrades = trades.filter(t => {
+          const monthTrades = shown.filter(t => {
             const d = new Date(t.created_at)
             return d.getFullYear() === year && d.getMonth() === month && t.status === 'closed'
           })
@@ -266,17 +310,17 @@ export default function StatsPage() {
           }).length
 
           const dayRRs = tradingDays
-  .map(day => ({ day, rr: getDayRR(tradesByDay[day]) }))
-  .filter((d): d is { day: string; rr: number } => d.rr !== null)
+            .map(day => ({ day, rr: getDayRR(tradesByDay[day]) }))
+            .filter((d): d is { day: string; rr: number } => d.rr !== null)
 
-const top = dayRRs.reduce<{ day: string; rr: number } | null>(
-  (b, d) => (!b || d.rr > b.rr ? d : b), null)
-const bottom = dayRRs.reduce<{ day: string; rr: number } | null>(
-  (w, d) => (!w || d.rr < w.rr ? d : w), null)
+          const top = dayRRs.reduce<{ day: string; rr: number } | null>(
+            (b, d) => (!b || d.rr > b.rr ? d : b), null)
+          const bottom = dayRRs.reduce<{ day: string; rr: number } | null>(
+            (w, d) => (!w || d.rr < w.rr ? d : w), null)
 
-// Best day must be a real winning day, worst day a real losing day
-const best = top && top.rr > 0 ? top : null
-const worst = bottom && bottom.rr < 0 ? bottom : null
+          // Best day must be a real winning day, worst day a real losing day
+          const best = top && top.rr > 0 ? top : null
+          const worst = bottom && bottom.rr < 0 ? bottom : null
 
           return (
             <div className="grid grid-cols-2 gap-2">
@@ -285,24 +329,24 @@ const worst = bottom && bottom.rr < 0 ? bottom : null
                 <div className="text-xs font-bold tracking-widest uppercase mb-1"
                   style={{ color: 'var(--text-secondary)' }}>Best Day</div>
                 <div className="text-sm font-bold font-mono"
-  style={{ color: best ? 'var(--accent)' : 'var(--text-secondary)' }}>
-  {best ? `+${best.rr}R` : '—'}
-</div>
-<div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-  {best ? `${monthName.split(' ')[0]} ${best.day}` : 'No winning day yet'}
-</div>
+                  style={{ color: best ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                  {best ? `+${best.rr}R` : '—'}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {best ? `${monthName.split(' ')[0]} ${best.day}` : 'No winning day yet'}
+                </div>
               </div>
               <div className="rounded-2xl p-3"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="text-xs font-bold tracking-widest uppercase mb-1"
                   style={{ color: 'var(--text-secondary)' }}>Worst Day</div>
                 <div className="text-sm font-bold font-mono"
-  style={{ color: worst ? 'var(--accent-loss)' : 'var(--text-secondary)' }}>
-  {worst ? `${worst.rr}R` : '—'}
-</div>
-<div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-  {worst ? `${monthName.split(' ')[0]} ${worst.day}` : 'No losing day yet'}
-</div>
+                  style={{ color: worst ? 'var(--accent-loss)' : 'var(--text-secondary)' }}>
+                  {worst ? `${worst.rr}R` : '—'}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {worst ? `${monthName.split(' ')[0]} ${worst.day}` : 'No losing day yet'}
+                </div>
               </div>
               <div className="rounded-2xl p-3"
                 style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -321,7 +365,6 @@ const worst = bottom && bottom.rr < 0 ? bottom : null
             </div>
           )
         })()}
-
 
         {/* Selected day trades */}
         {selectedDay && (
