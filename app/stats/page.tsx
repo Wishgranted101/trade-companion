@@ -92,7 +92,7 @@ export default function StatsPage() {
               <StatCard label="Wins" value={stats.wins} accent />
               <StatCard label="Losses" value={stats.losses} loss />
               <StatCard label="Avg RR" value={stats.avgRR} accent />
-              <StatCard label="Followed Plan" value={`${stats.followedPlanRate}%`} accent />
+              <StatCard label="Rules Met" value={`${stats.followedPlanRate}%`} accent />
             </>
           ) : (
             <div className="col-span-2 flex items-center justify-center py-10">

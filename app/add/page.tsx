@@ -18,7 +18,7 @@ const CHECKLIST = [
   { id: 'news', label: 'I have checked economic news / high-impact events' },
 ]
 
-const DOLLAR_PAIRS = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY']
+const DOLLAR_PAIRS = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'AUD/USD', 'NZD/USD', 'USD/JPY', 'USD/CAD', 'USD/CHF']
 
 // Planned RR from entry, stop and target (reward distance / risk distance)
 const calcRR = (entry: number, stop: number, target: number) => {
@@ -33,8 +33,8 @@ const calcRR = (entry: number, stop: number, target: number) => {
 const dollarsPerPoint = (pair: string, lots: number, price: number): number | null => {
   if (!lots || lots <= 0) return null
   if (pair === 'XAU/USD') return lots * 100
-  if (pair === 'EUR/USD' || pair === 'GBP/USD') return lots * 100000
-  if (pair === 'USD/JPY') return price > 0 ? (lots * 100000) / price : null
+  if (['EUR/USD', 'GBP/USD', 'AUD/USD', 'NZD/USD'].includes(pair)) return lots * 100000
+  if (['USD/JPY', 'USD/CAD', 'USD/CHF'].includes(pair)) return price > 0 ? (lots * 100000) / price : null
   return null
 }
 
@@ -51,6 +51,7 @@ export default function AddTradePage() {
   const [accountSize, setAccountSize] = useState<number | null>(null)
   const [editingAccount, setEditingAccount] = useState(false)
   const [accountInput, setAccountInput] = useState('')
+  const [manualRisk, setManualRisk] = useState('')
 
   useEffect(() => {
     fetchAccountSize().then(setAccountSize)
@@ -88,7 +89,8 @@ export default function AddTradePage() {
     })
 
   const lots = parseFloat(String(form.lot_size ?? ''))
-  const perPoint = dollarsPerPoint(form.pair, lots, form.entry_price)
+  const calcPair = form.pair === 'Other' ? customPair.trim().toUpperCase() : form.pair
+  const perPoint = dollarsPerPoint(calcPair, lots, form.entry_price)
   const riskDistance = Math.abs(form.entry_price - form.stop_price)
   const rewardDistance = Math.abs(form.target_price - form.entry_price)
   const riskDollars = perPoint !== null && riskDistance > 0 ? perPoint * riskDistance : null
@@ -96,7 +98,10 @@ export default function AddTradePage() {
   const pricesEntered = form.entry_price > 0 && form.stop_price > 0 && form.target_price > 0
   const sameSide = pricesEntered && (form.stop_price - form.entry_price) * (form.target_price - form.entry_price) > 0
   const rrBelowRule = pricesEntered && !sameSide && form.rr_planned > 0 && form.rr_planned < 3
-  const riskPct = riskDollars !== null && accountSize ? Math.round((riskDollars / accountSize) * 10000) / 100 : null
+  const manualRiskValue = parseFloat(manualRisk)
+  const needsManualRisk = pricesEntered && !sameSide && !DOLLAR_PAIRS.includes(calcPair)
+  const effectiveRisk = riskDollars ?? (needsManualRisk && manualRiskValue > 0 ? manualRiskValue : null)
+  const riskPct = effectiveRisk !== null && accountSize ? Math.round((effectiveRisk / accountSize) * 10000) / 100 : null
   const overRisk = pricesEntered && !sameSide && riskPct !== null && riskPct > 1
 
   const handleSaveAccount = async () => {
@@ -140,6 +145,7 @@ export default function AddTradePage() {
         pair: finalPair,
         setup_type: finalSetup,
         screenshot_url,
+        followed_plan: !(rrBelowRule || overRisk),
         lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
       })
       router.push('/')
@@ -328,6 +334,19 @@ export default function AddTradePage() {
             </button>
           )}
         </div>
+                {/* Manual risk for pairs without a contract size */}
+                {needsManualRisk && (
+          <div className="flex items-center justify-between rounded-xl px-3 py-2 text-xs"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <span className="font-bold tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>Risk $ (from order ticket)</span>
+            <input type="text" inputMode="decimal"
+              className="w-24 rounded-lg px-2 py-1 text-sm font-mono text-right"
+              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              placeholder="e.g. 1.00"
+              value={manualRisk}
+              onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) setManualRisk(e.target.value) }} />
+          </div>
+        )}
         {/* Pre-trade check */}
         {pricesEntered && (
           <div className="rounded-xl p-3 text-xs flex flex-col gap-1"
@@ -349,9 +368,9 @@ export default function AddTradePage() {
                 <div style={{ color: 'var(--text-secondary)' }}>
                   {riskDollars !== null && rewardDollars !== null
                     ? `Risk $${riskDollars.toFixed(2)} to make $${rewardDollars.toFixed(2)} at ${lots} lots`
-                    : DOLLAR_PAIRS.includes(form.pair)
-                      ? 'Enter a lot size to see your dollar risk'
-                      : 'Dollar risk is only calculated for XAU/USD, EUR/USD, GBP/USD and USD/JPY'}
+                    : DOLLAR_PAIRS.includes(calcPair)
+                    ? 'Enter a lot size to see your dollar risk'
+                    : 'Type the risk $ from your MT5 order ticket in the Risk $ row above'}
                 </div>
                 {riskPct !== null && (
                   <div className="font-semibold" style={{ color: overRisk ? 'var(--accent-loss)' : 'var(--accent)' }}>
