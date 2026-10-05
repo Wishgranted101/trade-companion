@@ -6,13 +6,16 @@ import Header from '@/components/layout/Header'
 import BottomNav from '@/components/layout/BottomNav'
 
 type TradeRow = Trade & { run_label?: string | null }
-type Block = 'All' | 'cTrader demo' | 'MT5'
-const BLOCKS: Block[] = ['All', 'cTrader demo', 'MT5']
+type Mode = 'All' | 'Demo' | 'Live'
+type Platform = 'All' | 'MT5' | 'cTrader'
+const MODES: Mode[] = ['All', 'Demo', 'Live']
+const PLATFORMS: Platform[] = ['All', 'MT5', 'cTrader']
 
 export default function StatsPage() {
   const [trades, setTrades] = useState<TradeRow[]>([])
   const [loaded, setLoaded] = useState(false)
-  const [block, setBlock] = useState<Block>('All')
+  const [mode, setMode] = useState<Mode>('All')
+  const [platform, setPlatform] = useState<Platform>('All')
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState(new Date())
 
@@ -24,9 +27,12 @@ export default function StatsPage() {
   }, [])
 
   // Trades in the selected block (drafts are already left out)
-  const shown: TradeRow[] = block === 'All'
-    ? trades
-    : trades.filter(t => (t.run_label ?? 'cTrader demo') === block)
+  const shown: TradeRow[] = trades.filter(t => {
+    const label = (t.run_label ?? 'cTrader demo').toLowerCase()
+    const modeOk = mode === 'All' || label.endsWith(mode.toLowerCase())
+    const platformOk = platform === 'All' || label.startsWith(platform.toLowerCase())
+    return modeOk && platformOk
+  })
 
   // Top stat cards, worked out from the selected block
   const total = shown.length
@@ -110,21 +116,38 @@ export default function StatsPage() {
       <Header title="Stats" />
       <div className="px-5 pt-5 flex flex-col gap-4">
 
-        {/* Block toggle */}
-        <div className="grid grid-cols-3 gap-2">
-          {BLOCKS.map(b => (
-            <button
-              key={b}
-              onClick={() => { setBlock(b); setSelectedDay(null) }}
-              className="py-2 rounded-xl text-xs font-bold"
-              style={{
-                backgroundColor: block === b ? 'var(--accent)' : 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: block === b ? '#fff' : 'var(--text-secondary)'
-              }}>
-              {b}
-            </button>
-          ))}
+               {/* Mode + platform toggles */}
+               <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            {MODES.map(m => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setSelectedDay(null) }}
+                className="py-2 rounded-xl text-xs font-bold"
+                style={{
+                  backgroundColor: mode === m ? (m === 'Live' ? 'var(--accent-loss)' : 'var(--accent)') : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: mode === m ? '#fff' : 'var(--text-secondary)'
+                }}>
+                {m}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {PLATFORMS.map(p => (
+              <button
+                key={p}
+                onClick={() => { setPlatform(p); setSelectedDay(null) }}
+                className="py-2 rounded-xl text-xs font-bold"
+                style={{
+                  backgroundColor: platform === p ? 'var(--accent)' : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: platform === p ? '#fff' : 'var(--text-secondary)'
+                }}>
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Stat Cards */}

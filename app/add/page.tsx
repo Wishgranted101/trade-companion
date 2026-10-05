@@ -9,6 +9,9 @@ import BottomNav from '@/components/layout/BottomNav'
 const PAIRS = ['XAU/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'GBP/JPY', 'NAS100', 'US30', 'Other']
 const SETUPS = ['Break & Retest', 'Trend Pullback', 'Reversal', 'Range Breakout', 'Support Bounce', 'Resistance Rejection', 'Other']
 
+const PLATFORMS = ['MT5 demo', 'MT5 live', 'cTrader demo', 'cTrader live'] as const
+type PlatformLabel = (typeof PLATFORMS)[number]
+
 const CHECKLIST = [
   { id: 'risk', label: 'Risk ≤ 1% of account' },
   { id: 'rr', label: 'Planned RR ≥ 3:1' },
@@ -53,20 +56,22 @@ export default function AddTradePage() {
   const [accountInput, setAccountInput] = useState('')
   const [manualRisk, setManualRisk] = useState('')
 
-  const [platform, setPlatform] = useState<'MT5' | 'cTrader demo'>('MT5')
+  const [platform, setPlatform] = useState<PlatformLabel>('MT5 demo')
 
   useEffect(() => {
     fetchAccountSize().then(setAccountSize)
     try {
       const saved = localStorage.getItem('tc_platform')
-      if (saved === 'MT5' || saved === 'cTrader demo') setPlatform(saved)
+      if (PLATFORMS.includes(saved as PlatformLabel)) setPlatform(saved as PlatformLabel)
     } catch {}
   }, [])
 
-  const choosePlatform = (p: 'MT5' | 'cTrader demo') => {
+  const choosePlatform = (p: PlatformLabel) => {
     setPlatform(p)
     try { localStorage.setItem('tc_platform', p) } catch {}
   }
+  const isLive = platform.endsWith('live')
+
   const [checks, setChecks] = useState({
     risk: false, rr: false, setup: false, session: false, emotion: false, news: false
   })
@@ -196,19 +201,30 @@ export default function AddTradePage() {
       <Header title="Log Trade" />
 
       <div className="px-5 pt-5 flex flex-col gap-5">
-        {/* Platform */}
+
+              {/* Platform */}
         <Field label="Platform">
           <div className="grid grid-cols-2 gap-2">
-            {(['MT5', 'cTrader demo'] as const).map(p => (
-              <button key={p} onClick={() => choosePlatform(p)}
-                className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-                style={{
-                  backgroundColor: platform === p ? 'var(--accent)' : 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  color: platform === p ? '#fff' : 'var(--text-secondary)'
-                }}>{p}</button>
-            ))}
+            {PLATFORMS.map(p => {
+              const live = p.endsWith('live')
+              const active = platform === p
+              return (
+                <button key={p} onClick={() => choosePlatform(p)}
+                  className="py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                  style={{
+                    backgroundColor: active ? (live ? 'var(--accent-loss)' : 'var(--accent)') : 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: active ? '#fff' : 'var(--text-secondary)'
+                  }}>{live ? '🔴 ' : ''}{p}</button>
+              )
+            })}
           </div>
+          {isLive && (
+            <div className="rounded-xl p-3 text-xs font-semibold"
+              style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
+              LIVE account: real money. Check the account size below and compare Risk $ with your order ticket.
+            </div>
+          )}
         </Field>
 
         {/* Pair */}
@@ -484,6 +500,9 @@ export default function AddTradePage() {
                 </div>
                 <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                   All boxes must be checked before committing
+                </div>
+                <div className="text-xs mt-1 font-bold" style={{ color: isLive ? 'var(--accent-loss)' : 'var(--accent)' }}>
+                  Logging as: {platform.toUpperCase()}
                 </div>
               </div>
               <div className="text-2xl">🛡️</div>
