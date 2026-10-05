@@ -16,6 +16,7 @@ export default function TradeDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const [trade, setTrade] = useState<Trade | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [closing, setClosing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -32,7 +33,10 @@ export default function TradeDetailPage() {
   })
 
   useEffect(() => {
-    if (id) fetchTradeById(id as string).then(setTrade).catch(console.error)
+    if (!id) return
+    fetchTradeById(id as string)
+      .then(t => { if (t) setTrade(t); else setNotFound(true) })
+      .catch(e => { console.error(e); setNotFound(true) })
   }, [id])
 
   const handleDelete = async () => {
@@ -107,8 +111,24 @@ export default function TradeDetailPage() {
   }
 
   if (!trade) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
-      <span style={{ color: 'var(--text-secondary)' }}>Loading...</span>
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-5"
+      style={{ backgroundColor: 'var(--bg)' }}>
+      {notFound ? (
+        <>
+          <div className="text-4xl">🔍</div>
+          <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Trade not found</div>
+          <div className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+            It may have been deleted, or the link is wrong.
+          </div>
+          <button onClick={() => router.push('/')}
+            className="px-6 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95"
+            style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+            Back to Journal
+          </button>
+        </>
+      ) : (
+        <span style={{ color: 'var(--text-secondary)' }}>Loading...</span>
+      )}
     </div>
   )
 
