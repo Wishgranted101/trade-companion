@@ -21,6 +21,7 @@ export interface Trade {
   closing_note: string | null
   lot_size: number | null
   dollar_pnl: number | null
+  direction?: 'long' | 'short' | null
   created_at: string
 }
 

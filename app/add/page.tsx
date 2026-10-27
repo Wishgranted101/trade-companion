@@ -57,6 +57,7 @@ export default function AddTradePage() {
   const [manualRisk, setManualRisk] = useState('')
 
   const [platform, setPlatform] = useState<PlatformLabel>('MT5 demo')
+  const [direction, setDirection] = useState<'long' | 'short' | null>(null)
 
   useEffect(() => {
     fetchAccountSize().then(setAccountSize)
@@ -112,7 +113,10 @@ export default function AddTradePage() {
   const riskDollars = perPoint !== null && riskDistance > 0 ? perPoint * riskDistance : null
   const rewardDollars = perPoint !== null && rewardDistance > 0 ? perPoint * rewardDistance : null
   const pricesEntered = form.entry_price > 0 && form.stop_price > 0 && form.target_price > 0
-  const sameSide = pricesEntered && (form.stop_price - form.entry_price) * (form.target_price - form.entry_price) > 0
+  const bothSameSide = pricesEntered && (form.stop_price - form.entry_price) * (form.target_price - form.entry_price) > 0
+  const wrongSide = pricesEntered && !bothSameSide && direction !== null &&
+    (direction === 'long' ? form.stop_price > form.entry_price : form.stop_price < form.entry_price)
+  const sameSide = bothSameSide || wrongSide
   const rrBelowRule = pricesEntered && !sameSide && form.rr_planned > 0 && form.rr_planned < 3
   const manualRiskValue = parseFloat(manualRisk)
   const needsManualRisk = pricesEntered && !sameSide && !DOLLAR_PAIRS.includes(calcPair)
@@ -141,6 +145,7 @@ export default function AddTradePage() {
   const allChecked = checks.risk && checks.rr && checks.setup && checks.session && checks.emotion && checks.news
 
   const handleOpenGatekeeper = () => {
+    if (!direction) return
     setChecks({ risk: false, rr: false, setup: false, session: false, emotion: false, news: false })
     setShowGatekeeper(true)
   }
@@ -163,6 +168,7 @@ export default function AddTradePage() {
         screenshot_url,
         followed_plan: !(rrBelowRule || overRisk),
         run_label: platform,
+        direction,
         lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
       } as NewTrade)
       router.push('/')
@@ -187,6 +193,7 @@ export default function AddTradePage() {
           screenshot_url,
           status: 'draft',
           run_label: platform,
+          direction,
           lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
         } as NewTrade)
       router.push('/')
@@ -301,6 +308,26 @@ export default function AddTradePage() {
           </div>
         </Field>
 
+        {/* Direction */}
+        <Field label="Direction">
+          <div className="grid grid-cols-2 gap-2">
+            {(['long', 'short'] as const).map(d => (
+              <button key={d} onClick={() => setDirection(d)}
+                className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: direction === d ? (d === 'long' ? 'var(--accent)' : 'var(--accent-be)') : 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: direction === d ? '#fff' : 'var(--text-secondary)'
+                }}>{d === 'long' ? '▲ Long (Buy)' : '▼ Short (Sell)'}</button>
+            ))}
+          </div>
+          {direction === null && pricesEntered && (
+            <div className="text-xs font-semibold" style={{ color: 'var(--accent-loss)' }}>
+              Choose Long or Short to open this trade.
+            </div>
+          )}
+        </Field>
+        
         {/* Prices */}
         <div className="grid grid-cols-3 gap-3">
           <Field label="Entry">
@@ -399,7 +426,11 @@ export default function AddTradePage() {
             }}>
             {sameSide ? (
               <div className="font-semibold" style={{ color: 'var(--accent-loss)' }}>
-                ⚠️ Stop and target are on the same side of entry. Check your prices.
+                                ⚠️ {bothSameSide
+                  ? 'Stop and target are on the same side of entry. Check your prices.'
+                  : direction === 'long'
+                  ? 'For a long, the stop must be below entry and the target above.'
+                  : 'For a short, the stop must be above entry and the target below.'}
               </div>
             ) : (
               <>
