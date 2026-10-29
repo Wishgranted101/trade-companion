@@ -419,7 +419,7 @@ export default function TradeDetailPage() {
           )}
 
           {/* Edit button for closed trades */}
-          {!isOpen && !isDraft && editing && (
+          {!isOpen && !isDraft && !editing && (
             <button onClick={() => setEditing(true)}
               className="w-full py-3 rounded-2xl text-sm font-bold transition-all active:scale-95"
               style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
@@ -427,7 +427,7 @@ export default function TradeDetailPage() {
             </button>
           )}
 
-          {!isOpen && editing && (
+         {!isOpen && !isDraft && editing && (
             <div className="rounded-2xl p-4 flex flex-col gap-4"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Edit Trade</div>
