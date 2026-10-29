@@ -18,7 +18,7 @@ export default function HomePage() {
   }, [])
 
   // Drafts are pending orders, so they stay out of the summary numbers
-  const counted = trades.filter(t => t.status !== 'draft')
+  const counted = trades.filter(t => t.status === 'closed')
   const wins = counted.filter(t => t.outcome === 'win').length
   const total = counted.length
   const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
