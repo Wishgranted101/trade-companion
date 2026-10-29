@@ -12,6 +12,14 @@ function computeRR(pnl: string, risk: string): string {
   if (Number.isNaN(p) || Number.isNaN(r) || r <= 0) return ''
   return String(Math.round((Math.abs(p) / r) * 100) / 100)
 }
+const CHECKLIST = [
+  'Risk ≤ 1% of account',
+  'Planned RR ≥ 3:1',
+  'This matches one of my allowed setups',
+  'Trade is within my allowed session',
+  'I am NOT entering out of revenge / FOMO / urgency',
+  'I have checked economic news / high-impact events',
+]
 export default function TradeDetailPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -23,6 +31,9 @@ export default function TradeDetailPage() {
   const [lightbox, setLightbox] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [closeError, setCloseError] = useState('')
+  const [activating, setActivating] = useState(false)
+  const [activateChecks, setActivateChecks] = useState<boolean[]>([false, false, false, false, false, false])
+  const [activateDirection, setActivateDirection] = useState<'long' | 'short' | null>(null)
   const [closeForm, setCloseForm] = useState({
     outcome: 'win' as Outcome,
     rr_result: '',
@@ -77,12 +88,16 @@ export default function TradeDetailPage() {
   }
   const handleActivateTrade = async () => {
     if (!trade) return
+    const dir = trade.direction ?? activateDirection
+    if (!dir || !activateChecks.every(Boolean)) return
     setSaving(true)
     try {
       const updated = await updateTrade(trade.id, {
         status: 'open',
+        direction: dir,
       })
       setTrade(updated)
+      setActivating(false)
     } catch (e) {
       console.error(e)
     } finally {
@@ -135,7 +150,13 @@ export default function TradeDetailPage() {
   const isOpen = trade.status === 'open'
   const isDraft = trade.status === 'draft'
   const outcomeColor = trade.outcome === 'win' ? 'var(--accent)' : trade.outcome === 'loss' ? 'var(--accent-loss)' : 'var(--accent-be)'
-
+  const actDir = trade.direction ?? activateDirection
+  const actPricesOk = actDir === 'long'
+    ? trade.stop_price < trade.entry_price && trade.entry_price < trade.target_price
+    : actDir === 'short'
+    ? trade.target_price < trade.entry_price && trade.entry_price < trade.stop_price
+    : false
+  const actReady = actDir !== null && actPricesOk && activateChecks.every(Boolean)
   return (
     <>
       <div className="pb-96" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
@@ -201,14 +222,86 @@ export default function TradeDetailPage() {
               </div>
             </div>
           )}
-{/* Activate Trade — draft only */}
-{isDraft && (
-            <button onClick={handleActivateTrade} disabled={saving}
-              className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
-              style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
-              {saving ? 'Activating...' : '🚀 Activate Trade'}
-            </button>
-          )}
+{/* Activate Trade — draft only, goes through the Gatekeeper */}
+{isDraft && !activating && (
+  <button onClick={() => { setActivateChecks([false, false, false, false, false, false]); setActivating(true) }}
+    className="w-full py-4 rounded-2xl text-sm font-bold transition-all active:scale-95"
+    style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+    🚀 Activate Trade
+  </button>
+)}
+{isDraft && activating && (
+  <div className="rounded-2xl p-4 flex flex-col gap-3"
+    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '80px' }}>
+    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>🛡️ Discipline Check</div>
+
+    {!trade.direction && (
+      <Field label="Direction">
+        <div className="grid grid-cols-2 gap-2">
+          {(['long', 'short'] as const).map(d => (
+            <button key={d} onClick={() => setActivateDirection(d)}
+              className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+              style={{
+                backgroundColor: activateDirection === d ? (d === 'long' ? 'var(--accent)' : 'var(--accent-be)') : 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: activateDirection === d ? '#fff' : 'var(--text-secondary)'
+              }}>{d === 'long' ? '▲ Long (Buy)' : '▼ Short (Sell)'}</button>
+          ))}
+        </div>
+        {activateDirection === null && (
+          <div className="text-xs font-semibold" style={{ color: 'var(--accent-loss)' }}>
+            Choose Long or Short to activate this trade.
+          </div>
+        )}
+      </Field>
+    )}
+
+    {actDir && !actPricesOk && (
+      <div className="rounded-xl p-3 text-xs font-semibold"
+        style={{ backgroundColor: '#ff4d4d15', color: 'var(--accent-loss)', border: '1px solid var(--accent-loss)' }}>
+        ⚠️ {actDir === 'long'
+          ? 'For a long, the stop must be below entry and the target above.'
+          : 'For a short, the stop must be above entry and the target below.'}
+      </div>
+    )}
+
+    {CHECKLIST.map((label, i) => (
+      <button key={label}
+        onClick={() => setActivateChecks(p => p.map((v, j) => (j === i ? !v : v)))}
+        className="flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+        style={{
+          backgroundColor: activateChecks[i] ? '#00c89615' : 'var(--surface-2)',
+          border: `1px solid ${activateChecks[i] ? 'var(--accent)' : 'var(--border)'}`
+        }}>
+        <span className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{
+            backgroundColor: activateChecks[i] ? 'var(--accent)' : 'var(--surface)',
+            border: '1px solid var(--border)',
+            color: '#fff'
+          }}>{activateChecks[i] ? '✓' : ''}</span>
+        <span className="text-sm font-semibold"
+          style={{ color: activateChecks[i] ? 'var(--accent)' : 'var(--text-primary)' }}>{label}</span>
+      </button>
+    ))}
+
+    <div className="grid grid-cols-2 gap-2">
+      <button onClick={() => setActivating(false)}
+        className="py-3 rounded-xl text-sm font-bold"
+        style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+        Cancel
+      </button>
+      <button onClick={handleActivateTrade} disabled={!actReady || saving}
+        className="py-3 rounded-xl text-sm font-bold"
+        style={{
+          backgroundColor: actReady ? 'var(--accent)' : 'var(--surface-2)',
+          color: actReady ? '#fff' : 'var(--text-secondary)',
+          border: actReady ? 'none' : '1px solid var(--border)'
+        }}>
+        {saving ? 'Activating...' : '✓ Activate'}
+      </button>
+    </div>
+  </div>
+)}
           {/* Close Trade */}
           {isOpen && !closing && (
             <button onClick={() => setClosing(true)}

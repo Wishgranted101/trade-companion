@@ -192,6 +192,7 @@ export default function AddTradePage() {
           setup_type: finalSetup,
           screenshot_url,
           status: 'draft',
+          followed_plan: !(rrBelowRule || overRisk),
           run_label: platform,
           direction,
           lot_size: typeof form.lot_size === 'string' ? parseFloat(form.lot_size as any) || null : form.lot_size
