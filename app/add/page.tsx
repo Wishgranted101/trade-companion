@@ -205,7 +205,7 @@ export default function AddTradePage() {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingBottom: '240px' }}>
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingBottom: '160px' }}>
       <Header title="Log Trade" />
 
       <div className="px-5 pt-5 flex flex-col gap-5">

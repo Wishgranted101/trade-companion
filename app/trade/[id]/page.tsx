@@ -159,7 +159,7 @@ export default function TradeDetailPage() {
   const actReady = actDir !== null && actPricesOk && activateChecks.every(Boolean)
   return (
     <>
-      <div className="pb-96" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+            <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingBottom: '140px' }}>
         <Header title={trade.pair} />
         <div className="px-5 pt-5 flex flex-col gap-4">
 
