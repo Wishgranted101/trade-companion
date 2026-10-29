@@ -205,7 +205,7 @@ export default function AddTradePage() {
   }
 
   return (
-    <div className="pb-40" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
+    <div className="pb-64" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh' }}>
       <Header title="Log Trade" />
 
       <div className="px-5 pt-5 flex flex-col gap-5">
@@ -499,18 +499,19 @@ export default function AddTradePage() {
           </Field>
         )}
 
-        {/* Trade Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+              {/* Trade Action Buttons — pinned just above the bottom nav so they never scroll out of reach */}
+              <div className="fixed left-0 right-0 z-40 px-5 py-3 grid grid-cols-2 gap-3"
+          style={{ bottom: '72px', backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border)' }}>
           <button
             onClick={handleSaveDraft}
             disabled={saving}
-            className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-95"
+            className="w-full py-3 rounded-2xl text-base font-bold transition-all active:scale-95"
             style={{ backgroundColor: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             {saving ? 'Saving...' : '📋 Save Draft'}
           </button>
           <button
             onClick={handleOpenGatekeeper}
-            className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-95"
+            className="w-full py-3 rounded-2xl text-base font-bold transition-all active:scale-95"
             style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
             📂 Open Trade
           </button>
