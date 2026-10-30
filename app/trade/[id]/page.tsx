@@ -190,6 +190,7 @@ export default function TradeDetailPage() {
             <Detail label="Target" value={trade.target_price} mono />
             <Detail label="RR Planned" value={`${trade.rr_planned}R`} mono />
             <Detail label="Followed Plan" value={trade.followed_plan ? 'Yes ✓' : 'No ✗'} />
+            {trade.direction && <Detail label="Direction" value={trade.direction === 'long' ? '▲ Long' : '▼ Short'} />}D
 <Detail label="Emotion" value={trade.emotion ?? '—'} />
 {trade.lot_size && <Detail label="Lot Size" value={trade.lot_size} mono />}
 {trade.dollar_pnl !== null && trade.dollar_pnl !== undefined && <Detail label="Dollar P&L" value={`${trade.dollar_pnl < 0 ? '-' : ''}$${Math.abs(trade.dollar_pnl)}`} mono />}
@@ -232,7 +233,7 @@ export default function TradeDetailPage() {
 )}
 {isDraft && activating && (
   <div className="rounded-2xl p-4 flex flex-col gap-3"
-    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '80px' }}>
+    style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '16px' }}>
     <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>🛡️ Discipline Check</div>
 
     {!trade.direction && (
@@ -313,7 +314,7 @@ export default function TradeDetailPage() {
 
           {isOpen && closing && (
             <div className="rounded-2xl p-4 flex flex-col gap-4"
-            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '80px' }}>
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent)', paddingBottom: '16px' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Close Trade</div>
 
               <Field label="Outcome">
