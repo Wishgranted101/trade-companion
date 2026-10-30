@@ -7,6 +7,9 @@ const outcomeStyles = {
   breakeven: { color: 'var(--accent-be)', label: 'B/E' },
 }
 
+// Soft tinted background for a CSS-variable colour
+const tint = (color: string) => `color-mix(in srgb, ${color} 15%, transparent)`
+
 export default function TradeCard({ trade }: { trade: Trade }) {
   const isOpen = trade.status === 'open'
   const outcome = trade.outcome ? outcomeStyles[trade.outcome] : null
@@ -38,17 +41,26 @@ export default function TradeCard({ trade }: { trade: Trade }) {
         </div>
 
         <div className="flex items-center justify-between">
-          {isOpen ? (
-            <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
-              style={{ color: 'var(--accent-be)', backgroundColor: 'var(--accent-be)15' }}>
-              OPEN
-            </span>
-          ) : outcome ? (
-            <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
-              style={{ color: outcome.color, backgroundColor: `${outcome.color}15` }}>
-              {outcome.label}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {isOpen ? (
+              <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
+                style={{ color: 'var(--accent-be)', backgroundColor: tint('var(--accent-be)') }}>
+                OPEN
+              </span>
+            ) : outcome ? (
+              <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
+                style={{ color: outcome.color, backgroundColor: tint(outcome.color) }}>
+                {outcome.label}
+              </span>
+            ) : null}
+
+            {trade.direction && (
+              <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-lg"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--surface-2)' }}>
+                {trade.direction === 'long' ? '▲ LONG' : '▼ SHORT'}
+              </span>
+            )}
+          </div>
 
           {trade.rr_result !== null && (
             <div className="flex items-center gap-1">
