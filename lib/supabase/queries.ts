@@ -160,13 +160,14 @@ function compressImage(file: File, maxWidth: number, quality: number): Promise<B
     img.src = url
   })
 }
-// ── Account size (for the 1% risk rule) ───────────────────────────
-export async function fetchAccountSize(): Promise<number | null> {
+// ── Account size (for the 1% risk rule), stored per platform ──────
+export async function fetchAccountSize(platform: string): Promise<number | null> {
   const supabase = createClient()
 
   const { data, error } = await supabase
     .from('account_settings')
     .select('account_size')
+    .eq('platform', platform)
     .maybeSingle()
 
   if (error) {
@@ -177,7 +178,7 @@ export async function fetchAccountSize(): Promise<number | null> {
   return data ? Number(data.account_size) : null
 }
 
-export async function saveAccountSize(size: number): Promise<void> {
+export async function saveAccountSize(size: number, platform: string): Promise<void> {
   const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -185,7 +186,10 @@ export async function saveAccountSize(size: number): Promise<void> {
 
   const { error } = await supabase
     .from('account_settings')
-    .upsert({ user_id: user.id, account_size: size, updated_at: new Date().toISOString() })
+    .upsert(
+      { user_id: user.id, platform, account_size: size, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,platform' }
+    )
 
   if (error) {
     console.error('saveAccountSize error:', error.message)

@@ -59,16 +59,17 @@ export default function AddTradePage() {
   const [platform, setPlatform] = useState<PlatformLabel>('MT5 demo')
   const [direction, setDirection] = useState<'long' | 'short' | null>(null)
 
-  useEffect(() => {
-    fetchAccountSize().then(setAccountSize)
-    try {
-      const saved = localStorage.getItem('tc_platform')
-      if (PLATFORMS.includes(saved as PlatformLabel)) setPlatform(saved as PlatformLabel)
-    } catch {}
-  }, [])
+   // Each platform has its own account size, so reload it whenever the platform changes
+   useEffect(() => {
+    let cancelled = false
+    setAccountSize(null)
+    fetchAccountSize(platform).then(size => { if (!cancelled) setAccountSize(size) })
+    return () => { cancelled = true }
+  }, [platform])
 
   const choosePlatform = (p: PlatformLabel) => {
     setPlatform(p)
+    setEditingAccount(false)
     try { localStorage.setItem('tc_platform', p) } catch {}
   }
   const isLive = platform.endsWith('live')
@@ -128,7 +129,7 @@ export default function AddTradePage() {
     const val = parseFloat(accountInput)
     if (!val || val <= 0) return
     try {
-      await saveAccountSize(val)
+      await saveAccountSize(val, platform)
       setAccountSize(val)
       setEditingAccount(false)
     } catch (e) {
@@ -383,7 +384,7 @@ export default function AddTradePage() {
                {/* Account size */}
                <div className="flex items-center justify-between rounded-xl px-3 py-2 text-xs"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <span className="font-bold tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>Account size</span>
+          <span className="font-bold tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>Account size · {platform}</span>
           {editingAccount ? (
             <div className="flex items-center gap-2">
               <input type="text" inputMode="decimal"
