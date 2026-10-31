@@ -34,12 +34,14 @@ export default function StatsPage() {
     return modeOk && platformOk
   })
 
-  // Top stat cards, worked out from the selected block
-  const total = shown.length
-  const wins = shown.filter(t => t.outcome === 'win').length
-  const losses = shown.filter(t => t.outcome === 'loss').length
-  const followed = shown.filter(t => t.followed_plan).length
-  const withRR = shown.filter(t => t.rr_result !== null && t.rr_result !== undefined)
+    // Top stat cards, worked out from closed trades in the selected block
+  // (open trades still show on the calendar, but they aren't results yet)
+  const closedShown = shown.filter(t => t.status === 'closed')
+  const total = closedShown.length
+  const wins = closedShown.filter(t => t.outcome === 'win').length
+  const losses = closedShown.filter(t => t.outcome === 'loss').length
+  const followed = closedShown.filter(t => t.followed_plan).length
+  const withRR = closedShown.filter(t => t.rr_result !== null && t.rr_result !== undefined)
   const avgRR = withRR.length > 0
     ? withRR.reduce((sum, t) => sum + (t.rr_result || 0), 0) / withRR.length
     : 0
@@ -51,6 +53,21 @@ export default function StatsPage() {
     followedPlanRate: total > 0 ? Math.round((followed / total) * 100) : 0,
     avgRR: Math.round(avgRR * 100) / 100,
   } : null
+
+  // Long vs Short split (closed trades only)
+  const directionStats = (dir: 'long' | 'short') => {
+    const rows = closedShown.filter(t => t.direction === dir)
+    const w = rows.filter(t => t.outcome === 'win').length
+    const rr = rows.filter(t => t.rr_result !== null && t.rr_result !== undefined)
+    const avg = rr.length > 0 ? rr.reduce((s, t) => s + (t.rr_result || 0), 0) / rr.length : 0
+    return {
+      count: rows.length,
+      winRate: rows.length > 0 ? Math.round((w / rows.length) * 100) : 0,
+      avgRR: Math.round(avg * 100) / 100,
+    }
+  }
+  const longStats = directionStats('long')
+  const shortStats = directionStats('short')
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -72,15 +89,16 @@ export default function StatsPage() {
 
   const selectedTrades = selectedDay ? (tradesByDay[selectedDay] || []) : []
 
+  const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`
   const getDayColor = (dayTrades: Trade[]) => {
     if (!dayTrades.length) return 'var(--surface)'
     const wins = dayTrades.filter(t => t.outcome === 'win').length
     const losses = dayTrades.filter(t => t.outcome === 'loss').length
     const open = dayTrades.filter(t => t.status === 'open').length
-    if (open > 0 && wins === 0 && losses === 0) return 'var(--accent-be)15'
-    if (wins > losses) return 'var(--accent)20'
-    if (losses > wins) return 'var(--accent-loss)20'
-    return 'var(--accent-be)20'
+    if (open > 0 && wins === 0 && losses === 0) return tint('var(--accent-be)', 10)
+    if (wins > losses) return tint('var(--accent)', 12)
+    if (losses > wins) return tint('var(--accent-loss)', 12)
+    return tint('var(--accent-be)', 12)
   }
 
   const getDayBorder = (dayTrades: Trade[]) => {
@@ -168,6 +186,14 @@ export default function StatsPage() {
           )}
         </div>
 
+        {/* Long vs Short */}
+        {stats && (
+          <div className="grid grid-cols-2 gap-3">
+            <DirectionCard label="▲ Long" s={longStats} />
+            <DirectionCard label="▼ Short" s={shortStats} />
+          </div>
+        )}
+
         {/* Calendar */}
         <div className="rounded-2xl p-4"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -246,9 +272,9 @@ export default function StatsPage() {
                       </span>
                       {dayTrades.length > 0 && (
                         <>
-                          <span style={{ color: isSelected ? '#fff' : 'var(--text-secondary)', fontSize: '9px' }}>
-                            {wins}W {losses}L
-                          </span>
+                        <span className="font-mono" style={{ color: isSelected ? '#fff' : 'var(--text-secondary)', fontSize: '9px' }}>
+                          {wins}W {losses}L
+                        </span>
                           {rr !== null && (
                             <span className="font-mono font-bold" style={{
                               fontSize: '9px',
@@ -448,6 +474,27 @@ function StatCard({ label, value, accent, loss }: {
         style={{ color: 'var(--text-secondary)' }}>
         {label}
       </div>
+    </div>
+  )
+}
+function DirectionCard({ label, s }: {
+  label: string; s: { count: number; winRate: number; avgRR: number }
+}) {
+  return (
+    <div className="rounded-2xl p-4"
+      style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="text-xs font-bold tracking-widest uppercase mb-2"
+        style={{ color: 'var(--text-secondary)' }}>{label}</div>
+      {s.count === 0 ? (
+        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>No trades yet</div>
+      ) : (
+        <>
+          <div className="text-2xl font-bold mb-1" style={{ color: 'var(--accent)' }}>{s.winRate}%</div>
+          <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+            {s.count} trade{s.count !== 1 ? 's' : ''} · avg {s.avgRR}R
+          </div>
+        </>
+      )}
     </div>
   )
 }
