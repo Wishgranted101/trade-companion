@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
-      style={{ backgroundColor: 'var(--background)' }}>
+      style={{ backgroundColor: 'var(--bg)' }}>
 
       {/* Value Proposition */}
       <div className="w-full max-w-sm mb-8 flex flex-col items-center text-center gap-3">
@@ -64,40 +64,47 @@ export default function LoginPage() {
 
         {/* Subheadline */}
         <p className="text-sm leading-relaxed"
-          style={{ color: 'var(--text-muted)' }}>
+          style={{ color: 'var(--text-secondary)' }}>
           Stop trading before you think. Plan every entry. Track every decision. Let the data coach you.
         </p>
 
-        {/* Stat Pills */}
-        <div className="flex flex-col gap-2 w-full mt-4">
-        {[
-  { value: '70%+', label: 'Trades lost to poor execution' },
-  { value: '3:1', label: 'RR minimum enforced' },
-  { value: '100%', label: 'Rule-follow rate tracked' },
-].map(stat => (
-  <div key={stat.value}
-    className="flex items-center justify-center px-5 py-3 rounded-xl gap-4"
-    style={{ backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-    <span className="text-base font-bold w-14 text-right shrink-0"
-      style={{ color: 'var(--accent)' }}>{stat.value}</span>
-    <span className="w-px h-4 shrink-0"
-      style={{ backgroundColor: 'var(--border)' }}/>
-    <span className="text-xs text-left"
-      style={{ color: 'var(--text-muted)' }}>{stat.label}</span>
-  </div>
-))}
-        </div>
+  {/* Stat Pills */}
+<div className="flex flex-col gap-2 w-full mt-4">
+  {[
+    { value: '70%+', label: 'Trades lost to poor execution' },
+    { value: '3:1', label: 'RR minimum enforced' },
+    { value: '100%', label: 'Rule-follow rate tracked' },
+  ].map(stat => (
+    <div
+      key={stat.value}
+      className="rounded-xl px-4 py-3"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '3.5rem 1px 1fr',
+        alignItems: 'center',
+        columnGap: '0.75rem',
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <span className="text-sm font-bold text-center" style={{ color: 'var(--accent)' }}>{stat.value}</span>
+      <div style={{ width: '1px', height: '1.25rem', backgroundColor: 'var(--border)' }} />
+      <span className="text-xs text-left" style={{ color: 'var(--text-secondary)' }}>{stat.label}</span>
+    </div>
+  ))}
+</div>
       </div>
 
       {/* Login Form */}
       <div className="w-full max-w-sm p-8 rounded-2xl"
-        style={{ backgroundColor: 'var(--surface-1)' }}>
+        style={{ backgroundColor: 'var(--surface)' }}>
 
-        <p className="text-sm mb-6 font-semibold" style={{ color: 'var(--text-muted)' }}>
-      
-          {mode === 'signup' && 'Create your account'}
-          {mode === 'forgot' && 'Reset your password'}
-        </p>
+{mode !== 'login' && (
+  <p className="text-sm mb-6 font-semibold" style={{ color: 'var(--text-secondary)' }}>
+    {mode === 'signup' && 'Create your account'}
+    {mode === 'forgot' && 'Reset your password'}
+  </p>
+)}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
