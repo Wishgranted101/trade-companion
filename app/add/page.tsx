@@ -59,6 +59,13 @@ export default function AddTradePage() {
   const [platform, setPlatform] = useState<PlatformLabel>('MT5 demo')
   const [direction, setDirection] = useState<'long' | 'short' | null>(null)
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tc_platform')
+      if (PLATFORMS.includes(saved as PlatformLabel)) setPlatform(saved as PlatformLabel)
+    } catch {}
+  }, [])
+
    // Each platform has its own account size, so reload it whenever the platform changes
    useEffect(() => {
     let cancelled = false
@@ -124,6 +131,7 @@ export default function AddTradePage() {
   const effectiveRisk = riskDollars ?? (needsManualRisk && manualRiskValue > 0 ? manualRiskValue : null)
   const riskPct = effectiveRisk !== null && accountSize ? Math.round((effectiveRisk / accountSize) * 10000) / 100 : null
   const overRisk = pricesEntered && !sameSide && riskPct !== null && riskPct > 1
+  const accountMissing = accountSize === null
 
   const handleSaveAccount = async () => {
     const val = parseFloat(accountInput)
