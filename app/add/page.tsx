@@ -154,13 +154,13 @@ export default function AddTradePage() {
   const allChecked = checks.risk && checks.rr && checks.setup && checks.session && checks.emotion && checks.news
 
   const handleOpenGatekeeper = () => {
-    if (!direction) return
+    if (!direction || accountMissing) return
     setChecks({ risk: false, rr: false, setup: false, session: false, emotion: false, news: false })
     setShowGatekeeper(true)
   }
 
   const handleCommit = async () => {
-    if (!allChecked) return
+    if (!allChecked || accountMissing) return
     const finalPair = form.pair === 'Other' ? customPair : form.pair
     const finalSetup = form.setup_type === 'Other' ? customSetup : form.setup_type
     if (!finalPair || !finalSetup) return
@@ -188,6 +188,7 @@ export default function AddTradePage() {
   }
 
   const handleSaveDraft = async () => {
+    if (accountMissing) return
     const finalPair = form.pair === 'Other' ? customPair : form.pair
     const finalSetup = form.setup_type === 'Other' ? customSetup : form.setup_type
     if (!finalPair || !finalSetup) return
