@@ -215,7 +215,7 @@ export default function AddTradePage() {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingBottom: '160px' }}>
+    <div style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', paddingBottom: '200px' }}>
       <Header title="Log Trade" />
 
       <div className="px-5 pt-5 flex flex-col gap-5">
@@ -515,16 +515,22 @@ export default function AddTradePage() {
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px',
           padding: '12px 20px', backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border)'
         }}>
-          <button onClick={handleSaveDraft} disabled={saving}
-            className="rounded-2xl text-base font-bold transition-all active:scale-95"
+          <button onClick={handleSaveDraft} disabled={saving || accountMissing}
+            className="rounded-2xl text-base font-bold transition-all active:scale-95 disabled:opacity-50"
             style={{ padding: '14px 0', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             {saving ? 'Saving...' : '📋 Save Draft'}
           </button>
-          <button onClick={handleOpenGatekeeper}
-            className="rounded-2xl text-base font-bold transition-all active:scale-95"
+          <button onClick={handleOpenGatekeeper} disabled={accountMissing}
+            className="rounded-2xl text-base font-bold transition-all active:scale-95 disabled:opacity-50"
             style={{ padding: '14px 0', backgroundColor: 'var(--accent)', color: '#fff' }}>
             📂 Open Trade
           </button>
+          
+          {accountMissing && (
+            <div className="text-xs font-semibold text-center" style={{ gridColumn: '1 / -1', color: 'var(--accent-loss)' }}>
+              Set an account size for {platform} to log a trade.
+            </div>
+          )}
         </div>
 
       </div>
